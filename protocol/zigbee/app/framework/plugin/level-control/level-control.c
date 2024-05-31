@@ -882,11 +882,6 @@ static void stepHandler(uint8_t commandId,
     }
   }
 
-  if (state->storedLevel != INVALID_STORED_LEVEL){
-     state->storedLevel = INVALID_STORED_LEVEL;
-     printf("state->storedLevel =%d \r\n",state->storedLevel);
-  }
-
   // The duration between events will be the transition time divided by the
   // distance we must move.
   state->eventDurationMs = state->transitionTimeMs / actualStepSize;

@@ -636,7 +636,7 @@ bool sli_zigbee_af_interpan_process_message(uint8_t messageLength,
   uint8_t payloadOffset, payloadLength;
   uint8_t* payload;
 
-
+  emberAfDebugPrintln("sli_zigbee_af_interpan_process_message");
   payloadOffset = parseInterpanMessage(messageContents,
                                        &messageLength,
                                        &headerData);
@@ -758,11 +758,7 @@ bool sli_zigbee_af_interpan_process_message(uint8_t messageLength,
                                headerData.shortAddress,
                                &headerData);
 }
-#define   Pro_Test_Mode 0
 
-#if Pro_Test_Mode
-extern void emberEnter_Test(uint8_t clust,uint8_t comm);
-#endif
 static bool isMessageAllowed(EmberAfInterpanHeader *headerData,
                              uint8_t messageLength,
                              uint8_t *messageContents)
@@ -837,9 +833,6 @@ static bool isMessageAllowed(EmberAfInterpanHeader *headerData,
                     headerData->profileId,
                     headerData->clusterId,
                     commandId);
-#if Pro_Test_Mode
-  emberEnter_Test(headerData->clusterId,commandId);
-#endif
   return false;
 }
 

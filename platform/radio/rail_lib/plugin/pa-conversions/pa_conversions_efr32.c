@@ -677,4 +677,3 @@ void sl_rail_util_pa_on_channel_config_change(RAIL_Handle_t rail_handle,
   } // !RAIL_IsPaAutoModeEnabled
 }
 #endif // !RAIL_PA_CONVERSIONS_WEAK
-

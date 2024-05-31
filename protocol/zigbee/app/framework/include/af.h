@@ -1886,8 +1886,6 @@ EmberStatus emberAfRemoveAddressTableEntry(uint8_t index);
  */
 #define emberAfCurrentCommand() (sli_zigbee_af_current_command)
 extern EmberAfClusterCommand *sli_zigbee_af_current_command;
-extern uint8_t  recevi_type;
-extern uint16_t  recevi_source;
 #endif
 
 /**

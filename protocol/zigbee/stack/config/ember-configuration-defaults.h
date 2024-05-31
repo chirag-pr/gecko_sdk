@@ -423,7 +423,7 @@
  */
 
 #ifndef EMBER_ROUTE_TABLE_SIZE //in leaf stack this value is defined to be 0
-    #define EMBER_ROUTE_TABLE_SIZE 64
+    #define EMBER_ROUTE_TABLE_SIZE 16
 #elif defined(EMBER_MIN_ROUTE_TABLE_SIZE) \
   && EMBER_ROUTE_TABLE_SIZE < EMBER_MIN_ROUTE_TABLE_SIZE
   #error "EMBER_ROUTE_TABLE_SIZE is less than required by stack profile."

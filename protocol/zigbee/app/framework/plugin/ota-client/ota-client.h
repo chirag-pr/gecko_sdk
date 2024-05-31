@@ -120,7 +120,7 @@
 // The spacing requested by the client between the image blocks sent by the
 // server to the client during a page request.
 #if !defined(EMBER_AF_OTA_CLIENT_PAGE_REQUEST_SPACING_MS)
-  #define EMBER_AF_OTA_CLIENT_PAGE_REQUEST_SPACING_MS 50L   //50 ->10 ms
+  #define EMBER_AF_OTA_CLIENT_PAGE_REQUEST_SPACING_MS 50L
 #endif
 
 // This is the time delay between calls to verifying the OTA image.

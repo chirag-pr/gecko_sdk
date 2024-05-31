@@ -763,10 +763,6 @@ void emberAfPluginUpdateTcLinkKeyStatusCallback(EmberKeyStatus keyStatus)
         sl_zigbee_event_set_delay_ms(finishSteeringEvent, ms);
         break;
       }
-
-      case EMBER_KEY_ESTABLISHMENT_TIMEOUT:
-        emberAfCorePrintln("EMBER_KEY_ESTABLISHMENT_TIMEOUT: \n\n\n\nn\n\n");
-        break;
       default:
         // Failure!
         emberLeaveNetwork();

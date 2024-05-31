@@ -72,8 +72,8 @@ void emberAfPluginColorControlServerHueSatTransitionEventHandler(sl_zigbee_event
 #define MIN_CIE_XY_VALUE 0
 // this value comes directly from the ZCL specification table 5.3
 #define MAX_CIE_XY_VALUE 0xfeff
-#define MIN_TEMPERATURE_VALUE 2700
-#define MAX_TEMPERATURE_VALUE 6500
+#define MIN_TEMPERATURE_VALUE 0
+#define MAX_TEMPERATURE_VALUE 1000
 #define MIN_HUE_VALUE 0
 #define MAX_HUE_VALUE 180
 #define MIN_SATURATION_VALUE 0
@@ -1424,21 +1424,40 @@ bool emberAfColorControlClusterStepColorTemperatureCallback(EmberAfClusterComman
     return true;
   }
 
+
+  uint16_t tempPhysicalMin = readColorTemperatureMin(endpoint);
+  uint16_t tempPhysicalMax = readColorTemperatureMax(endpoint);
+
+  sl_zigbee_app_debug_println("tempPhysicalMin  :%d\r\n", tempPhysicalMin);
+  sl_zigbee_app_debug_println("tempPhysicalMax  :%d\r\n", tempPhysicalMax);
+
   stepMode = cmd_data.stepMode;
-  stepSize = cmd_data.stepSize;
+//  stepSize = cmd_data.stepSize;
   transitionTime = cmd_data.transitionTime;
-  colorTemperatureMinimum = cmd_data.colorTemperatureMinimum;
-  colorTemperatureMaximum = cmd_data.colorTemperatureMaximum;
+//  colorTemperatureMinimum = cmd_data.colorTemperatureMinimum;
+//  colorTemperatureMaximum = cmd_data.colorTemperatureMaximum;
   optionsMask = cmd_data.optionsMask;
   optionsOverride = cmd_data.optionsOverride;
 
+  /**
+   *  换算步进控制为灯光可以控制的亮度百分比
+   */
+  colorTemperatureMinimum = tempPhysicalMin;
+  colorTemperatureMaximum = tempPhysicalMax;
+  stepSize = cmd_data.stepSize*(tempPhysicalMax-tempPhysicalMin)/(cmd_data.colorTemperatureMaximum - cmd_data.colorTemperatureMinimum);
+
+  sl_zigbee_app_debug_println("stepMode  :%d\r\n", stepMode);
+  sl_zigbee_app_debug_println("cmd_data.stepSize  :%d\r\n", cmd_data.stepSize);
+  sl_zigbee_app_debug_println("stepSize  :%d\r\n", stepSize);
+  sl_zigbee_app_debug_println("transitionTime  :%d\r\n", transitionTime);
+  sl_zigbee_app_debug_println("cmd_data.colorTemperatureMinimum  :%d\r\n", cmd_data.colorTemperatureMinimum);
+  sl_zigbee_app_debug_println("cmd_data.colorTemperatureMaximum  :%d\r\n", cmd_data.colorTemperatureMaximum);
+  sl_zigbee_app_debug_println("optionsMask  :%d\r\n", optionsMask);
+  sl_zigbee_app_debug_println("optionsOverride  :%d\r\n", optionsOverride);
   if (!shouldExecuteIfOff(endpoint, optionsMask, optionsOverride)) {
     emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
     return true;
   }
-
-  uint16_t tempPhysicalMin = readColorTemperatureMin(endpoint);
-  uint16_t tempPhysicalMax = readColorTemperatureMax(endpoint);
 
   if (transitionTime == 0) {
     transitionTime++;
@@ -1471,12 +1490,16 @@ bool emberAfColorControlClusterStepColorTemperatureCallback(EmberAfClusterComman
       if (colorTempTransitionState.finalValue > tempPhysicalMax) {
         colorTempTransitionState.finalValue = tempPhysicalMax;
       }
+
+      sl_zigbee_app_debug_println("MOVE_MODE_UP read color :%d  colorTempTransitionState.finalValue %d\r\n", readColorTemperature(endpoint),colorTempTransitionState.finalValue);
   } else {
     colorTempTransitionState.finalValue
       = readColorTemperature(endpoint) - stepSize;
-    if (colorTempTransitionState.finalValue < tempPhysicalMin) {
+    if ((int16_t)(colorTempTransitionState.finalValue) < tempPhysicalMin) {
       colorTempTransitionState.finalValue = tempPhysicalMin;
     }
+    sl_zigbee_app_debug_println("MOVE OTHER read color :%d  colorTempTransitionState.finalValue %d\r\n", readColorTemperature(endpoint),colorTempTransitionState.finalValue);
+
   }
   colorTempTransitionState.stepsRemaining = transitionTime;
   colorTempTransitionState.stepsTotal     = transitionTime;

@@ -145,7 +145,7 @@ static bool eraseOperation(bool startNewErase,
   }
 
   emberAfSetDefaultSleepControl(storedSleepControl);
-
+  emberAfSetShortPollIntervalMsCallback(100); //配网成功，设置100MS 的data request
   otaPrintln("EEPROM Erase complete");
 
   if (!sli_zigbee_af_ota_storage_check_download_meta_data()) {

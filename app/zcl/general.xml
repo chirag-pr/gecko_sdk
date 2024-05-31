@@ -197,7 +197,7 @@ limitations under the License.
     <attribute side="server" code="0x0012" define="DEVICE_ENABLED" type="BOOLEAN" min="0x00" max="0x01" writable="true" default="0x01" optional="true">device enabled</attribute>
     <attribute side="server" code="0x0013" define="ALARM_MASK" type="BITMAP8" min="0x00" max="0x03" writable="true" default="0x00" optional="true">alarm mask</attribute>
     <attribute side="server" code="0x0014" define="DISABLE_LOCAL_CONFIG" type="BITMAP8" min="0x00" max="0x03" writable="true" default="0x00" optional="true">disable local config</attribute>
-    <command source="client" code="0x00" name="ResetToFactoryDefaults" optional="true" cli="zcl basic rtfd">
+	<command source="client" code="0x00" name="ResetToFactoryDefaults" optional="true" cli="zcl basic rtfd">
       <description>Command that resets all attribute values to factory default.</description>
     </command>
   </cluster>

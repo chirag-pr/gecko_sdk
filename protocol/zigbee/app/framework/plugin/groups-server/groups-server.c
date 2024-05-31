@@ -271,7 +271,7 @@ bool emberAfGroupsClusterGetGroupMembershipCallback(EmberAfClusterCommand * cmd)
     // added.  Each group requires a binding and, because the binding table is
     // used for other purposes besides groups, we can't be sure what the
     // capacity will be in the future.
-    emberAfFillCommandGroupsClusterGetGroupMembershipResponse(0xFF, // capacity
+    emberAfFillCommandGroupsClusterGetGroupMembershipResponse(EMBER_BINDING_TABLE_SIZE, // capacity
                                                               count,
                                                               list,
                                                               listLen);

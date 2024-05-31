@@ -183,6 +183,8 @@ void sl_pwm_stop(sl_pwm_instance_t *pwm);
  *****************************************************************************/
 void sl_pwm_set_duty_cycle(sl_pwm_instance_t *pwm, uint8_t percent);
 
+void sl_pwm_set_custon_duty_cycle(sl_pwm_instance_t *pwm, uint8_t percent);
+
 /**************************************************************************//**
  * @brief
  *   Set duty cycle for PWM waveform.

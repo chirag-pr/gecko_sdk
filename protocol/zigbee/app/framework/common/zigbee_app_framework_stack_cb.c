@@ -1381,6 +1381,8 @@ void emberMacFilterMatchMessageHandler(
   // Return: macFilterMatchStruct.
   const EmberMacFilterMatchStruct *macFilterMatchStruct)
 {
+
+//  sl_zigbee_app_debug_println("emberMacFilterMatchMessageHandler");
   emberAfPushCallbackNetworkIndex();
   sli_zigbee_af_mac_filter_match_message(macFilterMatchStruct);
   uint8_t lastHopLqi = 0;

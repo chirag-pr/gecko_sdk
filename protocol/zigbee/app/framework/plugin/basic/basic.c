@@ -14,7 +14,6 @@
  * sections of the MSLA applicable to Source Code.
  *
  ******************************************************************************/
-
 #include "af.h"
 #include "basic.h"
 #include "app/framework/util/attribute-storage.h"
@@ -31,6 +30,14 @@
 #define SL_CATALOG_ZIGBEE_REPORTING_PRESENT
 #endif // EMBER_AF_PLUGIN_REPORTING
 #endif // SL_COMPONENT_CATALOG_PRESENT
+
+
+extern void zigbee_Private_Trasmit_Parse(uint8_t endpoint,
+                                  EmberAfClusterId cluster,
+                                  EmberAfAttributeId attributeID,
+                                  uint8_t *dataPtr,
+                                  uint16_t readLength);
+
 
 bool emberAfBasicClusterResetToFactoryDefaultsCallback(void)
 {
@@ -52,6 +59,25 @@ uint32_t emberAfBasicClusterServerCommandParse(sl_service_opcode_t opcode,
   EmberAfClusterCommand *cmd = (EmberAfClusterCommand *)context->data;
   if (!cmd->mfgSpecific && cmd->commandId == ZCL_RESET_TO_FACTORY_DEFAULTS_COMMAND_ID) {
     wasHandled = emberAfBasicClusterResetToFactoryDefaultsCallback();
+#if 1
+  }else if(cmd->commandId == ZCL_BASIC_PRIVATE_TRASMIT_CMD_ID){  //私有协议部分  需要去定义 ZCL_BASIC_PRIVATE_TRASMIT_CMD_ID 为0x68
+
+      uint8_t endpoint = cmd->apsFrame->sourceEndpoint; // 端点
+      uint16_t clusterId = cmd->apsFrame->clusterId;    // 集群ID
+    //  uint8_t sequenceNumber = cmd->seqNum;             // 序列号
+      uint8_t commandId = cmd->commandId;               // 命令ID
+
+ //     emberAfBasicClusterPrintln("basic  PRIVATE_TRASMIT  point: %x  sequenceNumber %x cmd->bufLen %x ", endpoint,sequenceNumber,cmd->bufLen);
+
+
+      zigbee_Private_Trasmit_Parse(endpoint,
+                            clusterId,
+                            commandId,
+                           (uint8_t *)&cmd->buffer[cmd->payloadStartIndex],
+                           (cmd->bufLen-3));
+      emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
+      wasHandled = true;
+#endif
   }
 
   return ((wasHandled)

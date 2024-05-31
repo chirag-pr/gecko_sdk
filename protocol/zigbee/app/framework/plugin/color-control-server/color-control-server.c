@@ -72,12 +72,12 @@ void emberAfPluginColorControlServerHueSatTransitionEventHandler(sl_zigbee_event
 #define MIN_CIE_XY_VALUE 0
 // this value comes directly from the ZCL specification table 5.3
 #define MAX_CIE_XY_VALUE 0xfeff
-#define MIN_TEMPERATURE_VALUE 0
-#define MAX_TEMPERATURE_VALUE 0xfeff
+#define MIN_TEMPERATURE_VALUE 2700
+#define MAX_TEMPERATURE_VALUE 6500
 #define MIN_HUE_VALUE 0
-#define MAX_HUE_VALUE 254
+#define MAX_HUE_VALUE 180
 #define MIN_SATURATION_VALUE 0
-#define MAX_SATURATION_VALUE 254
+#define MAX_SATURATION_VALUE 250
 #define HALF_MAX_UINT8T 127
 
 #define MIN_CURRENT_LEVEL 0x01
@@ -449,6 +449,9 @@ bool emberAfColorControlClusterMoveHueCallback(EmberAfClusterCommand *cmd)
   optionsMask = cmd_data.optionsMask;
   optionsOverride = cmd_data.optionsOverride;
 
+  emberAfColorControlClusterPrintln("ColorControl: MoveHue (%x, %x)",
+                                      moveMode,
+                                      rate);
 #ifdef EMBER_TEST
   emberAfColorControlClusterPrintln("ColorControl: MoveHue (%x, %x)",
                                     moveMode,
@@ -524,6 +527,10 @@ bool emberAfColorControlClusterMoveSaturationCallback(EmberAfClusterCommand *cmd
   rate = cmd_data.rate;
   optionsMask = cmd_data.optionsMask;
   optionsOverride = cmd_data.optionsOverride;
+
+  emberAfColorControlClusterPrintln("ColorControl: Saturation (%x, %x)",
+                                      moveMode,
+                                      rate);
 
   if (!shouldExecuteIfOff(endpoint, optionsMask, optionsOverride)) {
     emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
@@ -763,6 +770,10 @@ bool emberAfColorControlClusterStepHueCallback(EmberAfClusterCommand *cmd)
   optionsMask = cmd_data.optionsMask;
   optionsOverride = cmd_data.optionsOverride;
 
+  emberAfColorControlClusterPrintln("ColorControl: StepHue (%x, %x)",
+                                    stepMode,
+                                    stepSize);
+
   if (!shouldExecuteIfOff(endpoint, optionsMask, optionsOverride)) {
     emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
     return true;
@@ -836,6 +847,9 @@ bool emberAfColorControlClusterStepSaturationCallback(EmberAfClusterCommand *cmd
   optionsMask = cmd_data.transitionTime;
   optionsOverride = cmd_data.optionsOverride;
 
+  emberAfColorControlClusterPrintln("ColorControl: StepSaturation (%x, %x)",
+                                    stepMode,
+                                    stepSize);
   if (!shouldExecuteIfOff(endpoint, optionsMask, optionsOverride)) {
     emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
     return true;
@@ -1454,9 +1468,15 @@ bool emberAfColorControlClusterStepColorTemperatureCallback(EmberAfClusterComman
   if (stepMode == MOVE_MODE_UP) {
     colorTempTransitionState.finalValue
       = readColorTemperature(endpoint) + stepSize;
+      if (colorTempTransitionState.finalValue > tempPhysicalMax) {
+        colorTempTransitionState.finalValue = tempPhysicalMax;
+      }
   } else {
     colorTempTransitionState.finalValue
       = readColorTemperature(endpoint) - stepSize;
+    if (colorTempTransitionState.finalValue < tempPhysicalMin) {
+      colorTempTransitionState.finalValue = tempPhysicalMin;
+    }
   }
   colorTempTransitionState.stepsRemaining = transitionTime;
   colorTempTransitionState.stepsTotal     = transitionTime;
@@ -2001,6 +2021,10 @@ uint32_t emberAfColorControlClusterServerCommandParse(sl_service_opcode_t opcode
   EmberAfClusterCommand *cmd = (EmberAfClusterCommand *)context->data;
   bool wasHandled = false;
 
+  emberAfColorControlClusterPrintln("cmd->mfgSpecific  cmd->commandId :(%x, %x)",
+                                    cmd->mfgSpecific,
+                                    cmd->commandId);
+
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
   #ifdef SUPPORT_HUE_SATURATION
@@ -2071,6 +2095,12 @@ uint32_t emberAfColorControlClusterServerCommandParse(sl_service_opcode_t opcode
       case ZCL_STEP_COLOR_TEMPERATURE_COMMAND_ID:
       {
         wasHandled = emberAfColorControlClusterStepColorTemperatureCallback(cmd);
+        break;
+      }
+      case ZCL_STOP_MOVE_STEP_COMMAND_ID:
+      {
+        stopAllColorTransitions();
+        printf("ZCL_STOP_MOVE_STEP_COMMAND_ID \n",ZCL_STOP_MOVE_STEP_COMMAND_ID);
         break;
       }
   #endif // SUPPORT_COLOR_TEMPERATURE

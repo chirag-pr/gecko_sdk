@@ -1525,7 +1525,11 @@ static void sendMessage(uint8_t cmdId, uint8_t upgradeEndStatus, uint32_t timer)
   emberAfResponseApsFrame.clusterId = ZCL_OTA_BOOTLOAD_CLUSTER_ID;
   emberAfResponseApsFrame.sourceEndpoint = myEndpoint;
   emberAfResponseApsFrame.destinationEndpoint = serverEndpoint;
-  emberAfResponseApsFrame.options |= EMBER_APS_OPTION_RETRY;
+//  if(cmdId == ZCL_IMAGE_BLOCK_REQUEST_COMMAND_ID){
+//      emberAfResponseApsFrame.options &= ~EMBER_APS_OPTION_RETRY; // block request 不需要aps应答
+//  }else{
+      emberAfResponseApsFrame.options |= EMBER_APS_OPTION_RETRY;
+//  }
   {
     EmberStatus status = emberAfSendCommandUnicast(EMBER_OUTGOING_DIRECT, serverNodeId);
     if (status != EMBER_SUCCESS) {
@@ -1985,6 +1989,7 @@ static EmberAfStatus imageBlockResponseParse(uint8_t* buffer, uint8_t index, uin
   sli_zigbee_af_print_percentage_update("Download",
                                         DOWNLOAD_PERCENTAGE_UPDATE_RATE,
                                         offset);
+  emberAfSetShortPollIntervalMsCallback(100); //配网成功，设置100MS 的data request
 #endif
 
   if (offset >= totalImageSize) {

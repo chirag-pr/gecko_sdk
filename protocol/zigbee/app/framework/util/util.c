@@ -61,6 +61,8 @@ EmberAfClusterCommand curCmd;
 // emberAfProcessMessage. The pointer below is set
 // to NULL when the function exits.
 EmberAfClusterCommand *sli_zigbee_af_current_command;
+uint8_t  recevi_type =0;
+uint16_t  recevi_source =0;
 
 // variable used for toggling Aps Link security. Set by the CLI
 uint8_t sli_zigbee_af_test_aps_security_override = APS_TEST_SECURITY_DEFAULT;
@@ -383,8 +385,10 @@ uint16_t emberAfGetMfgCodeFromCurrentCommand(void)
   }
 }
 
+//extern uint8_t recevi_tyep =0;
 static void printIncomingZclMessage(const EmberAfClusterCommand *cmd)
 {
+  if(cmd->apsFrame->clusterId == 0x0019) return;
 #if ((defined(EMBER_AF_PRINT_ENABLE) && defined(EMBER_AF_PRINT_APP)) || (!defined(LARGE_NETWORK_TESTING) ))
   if (emberAfPrintReceivedMessages) {
     emberAfAppPrint("\r\nT%4x:", emberAfGetCurrentTime());
@@ -396,6 +400,7 @@ static void printIncomingZclMessage(const EmberAfClusterCommand *cmd)
     if (cmd->mfgSpecific) {
       emberAfAppPrint(" mfgId %2x", cmd->mfgCode);
     }
+    emberAfAppPrint(" groupId :%x type %x",cmd->apsFrame->groupId,cmd->type);
     emberAfAppPrint(" FC %x seq %x cmd %x payload[",
                     cmd->buffer[0], // frame control
                     cmd->seqNum,
@@ -406,6 +411,8 @@ static void printIncomingZclMessage(const EmberAfClusterCommand *cmd)
                           true);                                // spaces?
     emberAfAppFlush();
     emberAfAppPrintln("]");
+    emberAfAppPrint("source %lx  groupId :%d   option %d  destinationEndpoint %d   type %d \r\n",cmd->source,cmd->apsFrame->groupId,cmd->apsFrame->options,cmd->apsFrame->destinationEndpoint,cmd->type);
+  //  recevi_type = cmd->type;
   }
 #endif
 }
@@ -483,7 +490,8 @@ bool emberAfProcessMessage(EmberApsFrame *apsFrame,
   }
 
   sli_zigbee_af_current_command = &curCmd;
-
+  recevi_type = type;
+  recevi_source = source;
   // All of these should be covered by the EmberAfClusterCommand but are
   // still here until all the code is moved over to use the cmd. -WEH
   emberAfIncomingZclSequenceNumber = curCmd.seqNum;
@@ -779,7 +787,7 @@ EmberStatus emberAfSendDefaultResponseWithCallback(const EmberAfClusterCommand *
   frameControl = (ZCL_GLOBAL_COMMAND
                   | (cmd->direction == ZCL_DIRECTION_CLIENT_TO_SERVER
                      ? ZCL_FRAME_CONTROL_SERVER_TO_CLIENT
-                     : ZCL_FRAME_CONTROL_CLIENT_TO_SERVER));
+                     : ZCL_FRAME_CONTROL_CLIENT_TO_SERVER)|ZCL_DISABLE_DEFAULT_RESPONSE_MASK); //|ZCL_DISABLE_DEFAULT_RESPONSE_MASK  响应消息不需要再被响应
 
   if (!cmd->mfgSpecific) {
     (void) emberAfPutInt8uInResp(frameControl & (uint8_t) ~ZCL_MANUFACTURER_SPECIFIC_MASK);
@@ -799,6 +807,7 @@ EmberStatus emberAfSendDefaultResponseWithCallback(const EmberAfClusterCommand *
 EmberStatus emberAfSendDefaultResponse(const EmberAfClusterCommand *cmd,
                                        EmberAfStatus status)
 {
+  emberAfDebugPrint("emberAfSendDefaultResponse \n");
   return emberAfSendDefaultResponseWithCallback(cmd, status, NULL);
 }
 

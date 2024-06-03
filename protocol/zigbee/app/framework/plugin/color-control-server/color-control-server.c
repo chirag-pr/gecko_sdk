@@ -73,11 +73,11 @@ void emberAfPluginColorControlServerHueSatTransitionEventHandler(sl_zigbee_event
 // this value comes directly from the ZCL specification table 5.3
 #define MAX_CIE_XY_VALUE 0xfeff
 #define MIN_TEMPERATURE_VALUE 0
-#define MAX_TEMPERATURE_VALUE 1000
+#define MAX_TEMPERATURE_VALUE 0xfeff
 #define MIN_HUE_VALUE 0
-#define MAX_HUE_VALUE 180
+#define MAX_HUE_VALUE 254
 #define MIN_SATURATION_VALUE 0
-#define MAX_SATURATION_VALUE 250
+#define MAX_SATURATION_VALUE 254
 #define HALF_MAX_UINT8T 127
 
 #define MIN_CURRENT_LEVEL 0x01
@@ -449,9 +449,6 @@ bool emberAfColorControlClusterMoveHueCallback(EmberAfClusterCommand *cmd)
   optionsMask = cmd_data.optionsMask;
   optionsOverride = cmd_data.optionsOverride;
 
-  emberAfColorControlClusterPrintln("ColorControl: MoveHue (%x, %x)",
-                                      moveMode,
-                                      rate);
 #ifdef EMBER_TEST
   emberAfColorControlClusterPrintln("ColorControl: MoveHue (%x, %x)",
                                     moveMode,
@@ -527,10 +524,6 @@ bool emberAfColorControlClusterMoveSaturationCallback(EmberAfClusterCommand *cmd
   rate = cmd_data.rate;
   optionsMask = cmd_data.optionsMask;
   optionsOverride = cmd_data.optionsOverride;
-
-  emberAfColorControlClusterPrintln("ColorControl: Saturation (%x, %x)",
-                                      moveMode,
-                                      rate);
 
   if (!shouldExecuteIfOff(endpoint, optionsMask, optionsOverride)) {
     emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
@@ -770,10 +763,6 @@ bool emberAfColorControlClusterStepHueCallback(EmberAfClusterCommand *cmd)
   optionsMask = cmd_data.optionsMask;
   optionsOverride = cmd_data.optionsOverride;
 
-  emberAfColorControlClusterPrintln("ColorControl: StepHue (%x, %x)",
-                                    stepMode,
-                                    stepSize);
-
   if (!shouldExecuteIfOff(endpoint, optionsMask, optionsOverride)) {
     emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
     return true;
@@ -847,9 +836,6 @@ bool emberAfColorControlClusterStepSaturationCallback(EmberAfClusterCommand *cmd
   optionsMask = cmd_data.transitionTime;
   optionsOverride = cmd_data.optionsOverride;
 
-  emberAfColorControlClusterPrintln("ColorControl: StepSaturation (%x, %x)",
-                                    stepMode,
-                                    stepSize);
   if (!shouldExecuteIfOff(endpoint, optionsMask, optionsOverride)) {
     emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
     return true;
@@ -1424,40 +1410,21 @@ bool emberAfColorControlClusterStepColorTemperatureCallback(EmberAfClusterComman
     return true;
   }
 
-
-  uint16_t tempPhysicalMin = readColorTemperatureMin(endpoint);
-  uint16_t tempPhysicalMax = readColorTemperatureMax(endpoint);
-
-  sl_zigbee_app_debug_println("tempPhysicalMin  :%d\r\n", tempPhysicalMin);
-  sl_zigbee_app_debug_println("tempPhysicalMax  :%d\r\n", tempPhysicalMax);
-
   stepMode = cmd_data.stepMode;
-//  stepSize = cmd_data.stepSize;
+  stepSize = cmd_data.stepSize;
   transitionTime = cmd_data.transitionTime;
-//  colorTemperatureMinimum = cmd_data.colorTemperatureMinimum;
-//  colorTemperatureMaximum = cmd_data.colorTemperatureMaximum;
+  colorTemperatureMinimum = cmd_data.colorTemperatureMinimum;
+  colorTemperatureMaximum = cmd_data.colorTemperatureMaximum;
   optionsMask = cmd_data.optionsMask;
   optionsOverride = cmd_data.optionsOverride;
 
-  /**
-   *  换算步进控制为灯光可以控制的亮度百分比
-   */
-  colorTemperatureMinimum = tempPhysicalMin;
-  colorTemperatureMaximum = tempPhysicalMax;
-  stepSize = cmd_data.stepSize*(tempPhysicalMax-tempPhysicalMin)/(cmd_data.colorTemperatureMaximum - cmd_data.colorTemperatureMinimum);
-
-  sl_zigbee_app_debug_println("stepMode  :%d\r\n", stepMode);
-  sl_zigbee_app_debug_println("cmd_data.stepSize  :%d\r\n", cmd_data.stepSize);
-  sl_zigbee_app_debug_println("stepSize  :%d\r\n", stepSize);
-  sl_zigbee_app_debug_println("transitionTime  :%d\r\n", transitionTime);
-  sl_zigbee_app_debug_println("cmd_data.colorTemperatureMinimum  :%d\r\n", cmd_data.colorTemperatureMinimum);
-  sl_zigbee_app_debug_println("cmd_data.colorTemperatureMaximum  :%d\r\n", cmd_data.colorTemperatureMaximum);
-  sl_zigbee_app_debug_println("optionsMask  :%d\r\n", optionsMask);
-  sl_zigbee_app_debug_println("optionsOverride  :%d\r\n", optionsOverride);
   if (!shouldExecuteIfOff(endpoint, optionsMask, optionsOverride)) {
     emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
     return true;
   }
+
+  uint16_t tempPhysicalMin = readColorTemperatureMin(endpoint);
+  uint16_t tempPhysicalMax = readColorTemperatureMax(endpoint);
 
   if (transitionTime == 0) {
     transitionTime++;
@@ -1487,19 +1454,9 @@ bool emberAfColorControlClusterStepColorTemperatureCallback(EmberAfClusterComman
   if (stepMode == MOVE_MODE_UP) {
     colorTempTransitionState.finalValue
       = readColorTemperature(endpoint) + stepSize;
-      if (colorTempTransitionState.finalValue > tempPhysicalMax) {
-        colorTempTransitionState.finalValue = tempPhysicalMax;
-      }
-
-      sl_zigbee_app_debug_println("MOVE_MODE_UP read color :%d  colorTempTransitionState.finalValue %d\r\n", readColorTemperature(endpoint),colorTempTransitionState.finalValue);
   } else {
     colorTempTransitionState.finalValue
       = readColorTemperature(endpoint) - stepSize;
-    if ((int16_t)(colorTempTransitionState.finalValue) < tempPhysicalMin) {
-      colorTempTransitionState.finalValue = tempPhysicalMin;
-    }
-    sl_zigbee_app_debug_println("MOVE OTHER read color :%d  colorTempTransitionState.finalValue %d\r\n", readColorTemperature(endpoint),colorTempTransitionState.finalValue);
-
   }
   colorTempTransitionState.stepsRemaining = transitionTime;
   colorTempTransitionState.stepsTotal     = transitionTime;
@@ -2044,10 +2001,6 @@ uint32_t emberAfColorControlClusterServerCommandParse(sl_service_opcode_t opcode
   EmberAfClusterCommand *cmd = (EmberAfClusterCommand *)context->data;
   bool wasHandled = false;
 
-  emberAfColorControlClusterPrintln("cmd->mfgSpecific  cmd->commandId :(%x, %x)",
-                                    cmd->mfgSpecific,
-                                    cmd->commandId);
-
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
   #ifdef SUPPORT_HUE_SATURATION
@@ -2118,12 +2071,6 @@ uint32_t emberAfColorControlClusterServerCommandParse(sl_service_opcode_t opcode
       case ZCL_STEP_COLOR_TEMPERATURE_COMMAND_ID:
       {
         wasHandled = emberAfColorControlClusterStepColorTemperatureCallback(cmd);
-        break;
-      }
-      case ZCL_STOP_MOVE_STEP_COMMAND_ID:
-      {
-        stopAllColorTransitions();
-        printf("ZCL_STOP_MOVE_STEP_COMMAND_ID \n",ZCL_STOP_MOVE_STEP_COMMAND_ID);
         break;
       }
   #endif // SUPPORT_COLOR_TEMPERATURE

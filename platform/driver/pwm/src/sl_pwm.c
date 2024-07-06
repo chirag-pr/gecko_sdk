@@ -230,7 +230,8 @@ void sl_pwm_set_duty_cycle(sl_pwm_instance_t *pwm, uint8_t percent)
   uint32_t top = TIMER_TopGet(pwm->timer);
 
   // Set compare value
-  TIMER_CompareBufSet(pwm->timer, pwm->channel, (top * percent) / 100);
+//  TIMER_CompareBufSet(pwm->timer, pwm->channel, (top * percent) / 100);
+  TIMER_CompareBufSet(pwm->timer, pwm->channel, (20 * percent));
 }
 
 uint8_t sl_pwm_get_duty_cycle(sl_pwm_instance_t *pwm)

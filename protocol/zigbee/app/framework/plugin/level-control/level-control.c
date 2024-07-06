@@ -232,7 +232,7 @@ void emberAfLevelControlClusterServerTickCallback(uint8_t endpoint)
     if (state->commandId == ZCL_MOVE_TO_LEVEL_WITH_ON_OFF_COMMAND_ID
         || state->commandId == ZCL_MOVE_WITH_ON_OFF_COMMAND_ID
         || state->commandId == ZCL_STEP_WITH_ON_OFF_COMMAND_ID) {
-      setOnOffValue(endpoint, (currentLevel != MIN_LEVEL));
+      setOnOffValue(endpoint, (currentLevel != MIN_LEVEL-1));
       if (currentLevel == MIN_LEVEL && state->useOnLevel) {
         status = emberAfWriteServerAttribute(endpoint,
                                              ZCL_LEVEL_CONTROL_CLUSTER_ID,
@@ -599,7 +599,7 @@ static void moveToLevelHandler(uint8_t commandId,
   // reached.
   if (currentLevel <= state->moveToLevel) {
     if (commandId == ZCL_MOVE_TO_LEVEL_WITH_ON_OFF_COMMAND_ID) {
-      setOnOffValue(endpoint, (state->moveToLevel != MIN_LEVEL));
+      setOnOffValue(endpoint, (state->moveToLevel != MIN_LEVEL-1));
     }
     if (currentLevel == state->moveToLevel) {
       status = EMBER_ZCL_STATUS_SUCCESS;
@@ -733,7 +733,7 @@ static void moveHandler(uint8_t commandId, uint8_t moveMode, uint8_t rate, uint8
   // reached.
   if (currentLevel <= state->moveToLevel) {
     if (commandId == ZCL_MOVE_WITH_ON_OFF_COMMAND_ID) {
-      setOnOffValue(endpoint, (state->moveToLevel != MIN_LEVEL));
+      setOnOffValue(endpoint, (state->moveToLevel != MIN_LEVEL-1));
     }
     if (currentLevel == state->moveToLevel) {
       status = EMBER_ZCL_STATUS_SUCCESS;
@@ -854,7 +854,7 @@ static void stepHandler(uint8_t commandId,
   // reached.
   if (currentLevel <= state->moveToLevel) {
     if (commandId == ZCL_STEP_WITH_ON_OFF_COMMAND_ID) {
-      setOnOffValue(endpoint, (state->moveToLevel != MIN_LEVEL));
+      setOnOffValue(endpoint, (state->moveToLevel != MIN_LEVEL-1));
     }
     if (currentLevel == state->moveToLevel) {
       status = EMBER_ZCL_STATUS_SUCCESS;
@@ -1022,6 +1022,8 @@ void emberAfOnOffClusterLevelControlEffectCallback(uint8_t endpoint,
 
 void emberAfLevelControlClusterServerInitCallback(uint8_t endpoint)
 {
+  EmberAfLevelControlState *state = getState(endpoint);
+  state->storedLevel = INVALID_STORED_LEVEL;
 #ifdef ZCL_USING_LEVEL_CONTROL_CLUSTER_START_UP_CURRENT_LEVEL_ATTRIBUTE
   // StartUp behavior relies StartUpCurrentLevel attributes being tokenized.
   if (areStartUpLevelControlServerAttributesTokenized(endpoint)) {

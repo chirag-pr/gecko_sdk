@@ -23,10 +23,10 @@
 #include "attribute-table.h"
 
 #if defined(SL_CATALOG_ZIGBEE_AF_SUPPORT_PRESENT)
-extern bool sli_zigbee_af_green_power_server_gp_sink_commissioning_mode_command_handler(uint8_t options,
-                                                                                        uint16_t gpmAddrForSecurity,
-                                                                                        uint16_t gpmAddrForPairing,
-                                                                                        uint8_t sinkEndpoint);
+extern EmberAfStatus sli_zigbee_af_green_power_server_gp_sink_commissioning_mode_command_handler(uint8_t options,
+                                                                                                 uint16_t gpmAddrForSecurity,
+                                                                                                 uint16_t gpmAddrForPairing,
+                                                                                                 uint8_t sinkEndpoint);
 extern void sli_zigbee_af_gp_trans_table_clear_translation_table();
 extern EmberStatus sli_zigbee_af_gp_test_security(void);
 
@@ -126,11 +126,11 @@ bool sli_zigbee_af_process_ezsp_af_support_commands(uint16_t commandId)
       uint16_t gpmAddressSecurity = fetchInt16u();
       uint16_t gpmAddressPairing = fetchInt16u();
       uint8_t endpoint = fetchInt8u();
-      bool ret =   sli_zigbee_af_green_power_server_gp_sink_commissioning_mode_command_handler(options,
-                                                                                               gpmAddressSecurity,
-                                                                                               gpmAddressPairing,
-                                                                                               endpoint);
-      if (ret == true) {
+      EmberAfStatus ret =   sli_zigbee_af_green_power_server_gp_sink_commissioning_mode_command_handler(options,
+                                                                                                        gpmAddressSecurity,
+                                                                                                        gpmAddressPairing,
+                                                                                                        endpoint);
+      if (ret == EMBER_ZCL_STATUS_SUCCESS) {
         status = EMBER_SUCCESS;;
       }
       appendInt8u(status);

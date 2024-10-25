@@ -39,7 +39,7 @@
 // Forward declarations.
 
 static void        sl_debug_internal_binary_printf(sl_iostream_swo_itm_8_msg_type_t debugType,
-                                                   const char *                     formatString,
+                                                   const char                      *formatString,
                                                    va_list                          args);
 static void        startMessage(sl_iostream_swo_itm_8_msg_type_t debugType, uint8_t *buffer, size_t bufferSize);
 static sl_status_t putBytes(uint8_t *bytes, size_t count);
@@ -56,7 +56,7 @@ static sl_status_t endMessage(void);
  * @param[in]   args            arguments for \ref formatString
  */
 static void sl_debug_internal_binary_printf(sl_iostream_swo_itm_8_msg_type_t debugType,
-                                            const char *                     formatString,
+                                            const char                      *formatString,
                                             va_list                          args)
 {
     // Output longer than 128 bytes (with debug framing added) is split into
@@ -198,7 +198,6 @@ static sl_status_t endMessage(void)
 exit:
     return status;
 }
-
 
 //------------------------------------------------------------------------------
 // Public functions

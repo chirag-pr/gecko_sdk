@@ -237,7 +237,7 @@ static void ParseArg(int aArgCount, char *aArgVector[], PosixConfig *aConfig)
           exit(OT_EXIT_INVALID_ARGUMENTS);
         }
         strcpy(radioUrl, optarg);
-        aConfig->mPlatformConfig.mRadioUrls[aConfig->mPlatformConfig.mRadioUrlNum++] = radioUrl;
+        aConfig->mPlatformConfig.mCoprocessorUrls.mUrls[aConfig->mPlatformConfig.mCoprocessorUrls.mNum++] = radioUrl;
         break;
       case OT_POSIX_OPT_VERBOSE:
         aConfig->mIsVerbose = true;
@@ -276,7 +276,7 @@ void app_process_args(int argc, char *argv[])
 
   ParseArg(argc, argv, &config);
 
-  if (config.mPlatformConfig.mRadioUrlNum == 0) {
+  if (config.mPlatformConfig.mCoprocessorUrls.mNum == 0) {
     fprintf(stderr, "RadioURL is undefined.\n");
     PrintUsage(argv[0], stderr, OT_EXIT_INVALID_ARGUMENTS);
   }

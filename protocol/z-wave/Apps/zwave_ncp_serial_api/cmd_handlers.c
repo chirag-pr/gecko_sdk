@@ -1169,8 +1169,8 @@ static uint8_t RequestNodeNeighborUpdate(uint16_t nodeID, ZW_TX_Callback_t pCall
   if (EQUEUENOTIFYING_STATUS_SUCCESS == QueueNotifyingSendToBack(ZAF_getZwCommandQueue(), (uint8_t *)&Request, 0))
   {
     // Wait for protocol to handle command
-    SZwaveCommandStatusPackage status = { 0 };
-    if (GetCommandResponse(&status, EZWAVECOMMANDSTATUS_ZW_REQUESTNODENEIGHBORUPDATE))
+    SZwaveCommandStatusPackage status = { .eStatusType = EZWAVECOMMANDSTATUS_ZW_REQUESTNODENEIGHBORUPDATE};
+    if (GetCommandResponse(&status, status.eStatusType))
     {
       return  status.Content.RequestNodeNeigborUpdateStatus.result;
     }
@@ -1323,30 +1323,33 @@ ZCB_ComplHandler_ZW_NodeManagement(
   }
 
   uint8_t offset = 0;
-  addState = (*statusInfo).bStatus;
+  addState = statusInfo->bStatus;
   BYTE_IN_AR(compl_workbuf, 0) = funcID_ComplHandler_ZW_NodeManagement;
   BYTE_IN_AR(compl_workbuf, 1) = (*statusInfo).bStatus;
   if (SERIAL_API_SETUP_NODEID_BASE_TYPE_16_BIT == nodeIdBaseType)
   {
-    BYTE_IN_AR(compl_workbuf, 2) = (uint8_t)((*statusInfo).bSource >> 8); // MSB
-    BYTE_IN_AR(compl_workbuf, 3) = (uint8_t)((*statusInfo).bSource & 0xFF);      // LSB
+    BYTE_IN_AR(compl_workbuf, 2) = (uint8_t)(statusInfo->bSource >> 8); // MSB
+    BYTE_IN_AR(compl_workbuf, 3) = (uint8_t)(statusInfo->bSource & 0xFF);      // LSB
     offset++;  // 16 bit nodeID means the command fields that follow are offset by one byte
   }
   else
   {
-    BYTE_IN_AR(compl_workbuf, 2) = (uint8_t)((*statusInfo).bSource & 0xFF);      // Legacy 8 bit nodeID
+    BYTE_IN_AR(compl_workbuf, 2) = (uint8_t)(statusInfo->bSource & 0xFF);      // Legacy 8 bit nodeID
   }
   /*  - Buffer boundary check */
-  if ((*statusInfo).bLen > (uint8_t)(BUF_SIZE_TX - (offset + 4)))
+  if (statusInfo->bLen > (uint8_t)(BUF_SIZE_TX - (offset + 4)))
   {
-    (*statusInfo).bLen = (uint8_t)(BUF_SIZE_TX - (offset + 4));
+    statusInfo->bLen = (uint8_t)(BUF_SIZE_TX - (offset + 4));
   }
-  BYTE_IN_AR(compl_workbuf, offset + 3) = (*statusInfo).bLen;
-  for (uint8_t i = 0; i < (*statusInfo).bLen; i++)
+  BYTE_IN_AR(compl_workbuf, offset + 3) = statusInfo->bLen;
+  if(statusInfo->pCmd != NULL)
   {
-    BYTE_IN_AR(compl_workbuf, offset + 4 + i) = (*statusInfo).pCmd[i];
+    for (uint8_t i = 0; i < statusInfo->bLen; i++)
+    {
+      BYTE_IN_AR(compl_workbuf, offset + 4 + i) = statusInfo->pCmd[i];
+    }
   }
-  Request(nodeManagement_Func_ID, compl_workbuf, (uint8_t)(offset + (*statusInfo).bLen + 4));
+  Request(nodeManagement_Func_ID, compl_workbuf, (uint8_t)(offset + statusInfo->bLen + 4));
 }
 
 bool ZW_NodeManagementRunning(void)
@@ -1534,7 +1537,9 @@ static void ZCB_ZW_NodeManagementLearnStatusRelay(uint32_t Status)
   LEARN_INFO_T Info = {
       .bStatus = (uint8_t)Status,
       .bSource = node_id,
-      0};
+      .pCmd = NULL,
+      .bLen = 0
+  };
 
   ZCB_ComplHandler_ZW_NodeManagement(&Info);
 }
@@ -2788,8 +2793,8 @@ static uint8_t IsNodeVirtual(uint16_t nodeID)
   };
   EQueueNotifyingStatus QueueStatus = QueueNotifyingSendToBack(ZAF_getZwCommandQueue(), (uint8_t *)&cmdPackage, 500);
   ASSERT(EQUEUENOTIFYING_STATUS_SUCCESS == QueueStatus);
-  SZwaveCommandStatusPackage cmdStatus = { 0 };
-  if (GetCommandResponse(&cmdStatus, EZWAVECOMMANDSTATUS_IS_VIRTUAL_NODE))
+  SZwaveCommandStatusPackage cmdStatus = { .eStatusType = EZWAVECOMMANDSTATUS_IS_VIRTUAL_NODE };
+  if (GetCommandResponse(&cmdStatus, cmdStatus.eStatusType))
   {
     return cmdStatus.Content.IsVirtualNodeStatus.result;
   }
@@ -3487,8 +3492,8 @@ static uint8_t GetRandom(uint8_t noOfRndBytes, uint8_t* rndBytes)
   if (EQUEUENOTIFYING_STATUS_SUCCESS == QueueNotifyingSendToBack(ZAF_getZwCommandQueue(), (uint8_t *)&GetRandom, 0))
   {
     // Wait for protocol to handle command
-    SZwaveCommandStatusPackage Random = { 0 };
-    if (GetCommandResponse(&Random, EZWAVECOMMANDSTATUS_GENERATE_RANDOM))
+    SZwaveCommandStatusPackage Random = { .eStatusType = EZWAVECOMMANDSTATUS_GENERATE_RANDOM };
+    if (GetCommandResponse(&Random, Random.eStatusType))
     {
       memcpy(rndBytes, Random.Content.GenerateRandomStatus.aRandomNumber, Random.Content.GenerateRandomStatus.iLength);
       return  Random.Content.GenerateRandomStatus.iLength;
@@ -3593,13 +3598,11 @@ static bool SetMaxInclReqIntervals( uint32_t maxInclReqIntervals)
   if (EQUEUENOTIFYING_STATUS_SUCCESS == QueueNotifyingSendToBack(ZAF_getZwCommandQueue(), (uint8_t *)&setMaxInclusionRequestIntervals, 0))
   {
     // Wait for protocol to handle command
-    SZwaveCommandStatusPackage result = { 0 };
-    if (GetCommandResponse(&result, EZWAVECOMMANDSTATUS_ZW_SET_MAX_INCL_REQ_INTERVALS))
+    SZwaveCommandStatusPackage result = { .eStatusType = EZWAVECOMMANDSTATUS_ZW_SET_MAX_INCL_REQ_INTERVALS};
+    if ((GetCommandResponse(&result, result.eStatusType))
+      && (result.Content.NetworkManagementStatus.statusInfo[0]))
     {
-      if(result.Content.NetworkManagementStatus.statusInfo[0])
-      {
-        return true;
-      }
+      return true;
     }
   }
   return false;

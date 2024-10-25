@@ -1865,6 +1865,7 @@ bool emberAfGreenPowerClusterGpTranslationTableUpdateCallback(EmberAfClusterComm
         } else if ( retval == GP_TRANSLATION_TABLE_STATUS_PARAM_DOES_NOT_MATCH) {
           emberAfGreenPowerClusterPrintln("Parameter does not match @Index [%d]", index);
           emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_FAILURE); //send failure notification immediately
+          return true;
         }
       }
     } else if (action == 0x01) {
@@ -1887,6 +1888,7 @@ bool emberAfGreenPowerClusterGpTranslationTableUpdateCallback(EmberAfClusterComm
         } else if (retval == GP_TRANSLATION_TABLE_STATUS_PARAM_DOES_NOT_MATCH) {
           emberAfGreenPowerClusterPrintln("Parameter does not match @Index [%d]", index);
           emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_FAILURE);
+          return true;
         }
       }
     } else if (action == 0x02) {
@@ -1909,15 +1911,17 @@ bool emberAfGreenPowerClusterGpTranslationTableUpdateCallback(EmberAfClusterComm
         } else if (retval == GP_TRANSLATION_TABLE_STATUS_PARAM_DOES_NOT_MATCH) {
           emberAfGreenPowerClusterPrintln("Parameter does not match @Index [%d]", index);
           emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_FAILURE);
+          return true;
         }
       }
     } else {
-      goto kickout;
+      return true;
     }
     translationsEntryPtr += payloadOffset; //If successful move the pointer to the next translation
     payloadOffset = 0;
   }
-  kickout: return true;
+  emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
+  return true;
 }
 
 bool emberAfGreenPowerClusterGpTranslationTableRequestCallback(EmberAfClusterCommand *cmd)

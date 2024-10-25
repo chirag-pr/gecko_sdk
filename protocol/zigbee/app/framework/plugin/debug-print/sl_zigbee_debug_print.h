@@ -21,6 +21,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "sl_status.h"
+#include "sl_common.h"
 
 #ifdef SL_COMPONENT_CATALOG_PRESENT
  #include "sl_component_catalog.h"
@@ -62,6 +63,10 @@ void sli_zigbee_debug_print(uint32_t group_type, bool new_line, const char* form
 #define local_vprintf vprintf
 #endif
 
+// The ZCL Long String type data type takes first 2 bytes as the length
+// And the sl_zigbee_af_read_attribute takes an uint8_t as the output length.
+// So, it is important to ensure the largest value is less than the 253.
+#define LIMIT_ATTR_STR_LENGTH(str) SL_MIN((str), SL_MIN((ATTRIBUTE_LARGEST), 253))
 //------------------------------------------------------------------------------
 // Public types and APIs
 
@@ -98,8 +103,8 @@ void sli_zigbee_debug_print_buffer(uint32_t group_type,
 #define sl_zigbee_stack_debug_print(...) sli_zigbee_debug_print(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_STACK), false, __VA_ARGS__)
 #define sl_zigbee_stack_debug_println(...) sli_zigbee_debug_print(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_STACK), true, __VA_ARGS__)
 #define sl_zigbee_stack_debug_print_buffer(buffer, length, with_space) sli_zigbee_debug_print_buffer(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_STACK), (buffer), (length), (with_space), "%02X")
-#define sl_zigbee_stack_debug_print_string(buffer) sli_zigbee_debug_print_buffer(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_STACK), buffer + 1, emberAfStringLength(buffer), false, "%c")
-#define sl_zigbee_stack_debug_print_long_string(buffer) sli_zigbee_debug_print_buffer(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_STACK), buffer + 2, emberAfLongStringLength(buffer), false, "%c")
+#define sl_zigbee_stack_debug_print_string(buffer) sli_zigbee_debug_print_buffer(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_STACK), (buffer + 1), (LIMIT_ATTR_STR_LENGTH(emberAfStringLength(buffer))), false, "%c")
+#define sl_zigbee_stack_debug_print_long_string(buffer) sli_zigbee_debug_print_buffer(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_STACK), (buffer + 2), (LIMIT_ATTR_STR_LENGTH(emberAfLongStringLength(buffer))), false, "%c")
 #else
 #define sl_zigbee_stack_debug_print(...)
 #define sl_zigbee_stack_debug_println(...)
@@ -112,8 +117,8 @@ void sli_zigbee_debug_print_buffer(uint32_t group_type,
 #define sl_zigbee_core_debug_print(...) sli_zigbee_debug_print(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_CORE), false, __VA_ARGS__)
 #define sl_zigbee_core_debug_println(...) sli_zigbee_debug_print(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_CORE), true, __VA_ARGS__)
 #define sl_zigbee_core_debug_print_buffer(buffer, length, with_space) sli_zigbee_debug_print_buffer(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_CORE), (buffer), (length), (with_space), "%02X")
-#define sl_zigbee_core_debug_print_string(buffer) sli_zigbee_debug_print_buffer(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_CORE), buffer + 1, emberAfStringLength(buffer), false, "%c")
-#define sl_zigbee_core_debug_print_long_string(buffer) sli_zigbee_debug_print_buffer(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_CORE), buffer + 2, emberAfLongStringLength(buffer), false, "%c")
+#define sl_zigbee_core_debug_print_string(buffer) sli_zigbee_debug_print_buffer(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_CORE), (buffer + 1), (LIMIT_ATTR_STR_LENGTH(emberAfStringLength(buffer))), false, "%c")
+#define sl_zigbee_core_debug_print_long_string(buffer) sli_zigbee_debug_print_buffer(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_CORE), (buffer + 2), (LIMIT_ATTR_STR_LENGTH(emberAfLongStringLength(buffer))), false, "%c")
 #else
 #define sl_zigbee_core_debug_print(...)
 #define sl_zigbee_core_debug_println(...)
@@ -126,8 +131,8 @@ void sli_zigbee_debug_print_buffer(uint32_t group_type,
 #define sl_zigbee_app_debug_print(...) sli_zigbee_debug_print(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_APP), false, __VA_ARGS__)
 #define sl_zigbee_app_debug_println(...) sli_zigbee_debug_print(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_APP), true, __VA_ARGS__)
 #define sl_zigbee_app_debug_print_buffer(buffer, length, with_space) sli_zigbee_debug_print_buffer(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_APP), (buffer), (length), (with_space), "%02X")
-#define sl_zigbee_app_debug_print_string(buffer) sli_zigbee_debug_print_buffer(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_APP), buffer + 1, emberAfStringLength(buffer), false, "%c")
-#define sl_zigbee_app_debug_print_long_string(buffer) sli_zigbee_debug_print_buffer(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_APP), buffer + 2, emberAfLongStringLength(buffer), false, "%c")
+#define sl_zigbee_app_debug_print_string(buffer) sli_zigbee_debug_print_buffer(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_APP), (buffer + 1), (LIMIT_ATTR_STR_LENGTH(emberAfStringLength(buffer))), false, "%c")
+#define sl_zigbee_app_debug_print_long_string(buffer) sli_zigbee_debug_print_buffer(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_APP), (buffer + 2), (LIMIT_ATTR_STR_LENGTH(emberAfLongStringLength(buffer))), false, "%c")
 #else
 #define sl_zigbee_app_debug_print(...)
 #define sl_zigbee_app_debug_println(...)
@@ -140,8 +145,8 @@ void sli_zigbee_debug_print_buffer(uint32_t group_type,
 #define sl_zigbee_zcl_debug_print(...) sli_zigbee_debug_print(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_ZCL), false, __VA_ARGS__)
 #define sl_zigbee_zcl_debug_println(...) sli_zigbee_debug_print(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_ZCL), true, __VA_ARGS__)
 #define sl_zigbee_zcl_debug_print_buffer(buffer, length, with_space) sli_zigbee_debug_print_buffer(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_ZCL), (buffer), (length), (with_space), "%02X")
-#define sl_zigbee_zcl_debug_print_string(buffer) sli_zigbee_debug_print_buffer(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_ZCL), buffer + 1, emberAfStringLength(buffer), false, "%c")
-#define sl_zigbee_zcl_debug_print_long_string(buffer) sli_zigbee_debug_print_buffer(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_ZCL), buffer + 2, emberAfLongStringLength(buffer), false, "%c")
+#define sl_zigbee_zcl_debug_print_string(buffer) sli_zigbee_debug_print_buffer(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_ZCL), (buffer + 1), (LIMIT_ATTR_STR_LENGTH(emberAfStringLength(buffer))), false, "%c")
+#define sl_zigbee_zcl_debug_print_long_string(buffer) sli_zigbee_debug_print_buffer(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_ZCL), (buffer + 2), (LIMIT_ATTR_STR_LENGTH(emberAfLongStringLength(buffer))), false, "%c")
 #else
 #define sl_zigbee_zcl_debug_print(...)
 #define sl_zigbee_zcl_debug_println(...)
@@ -154,8 +159,8 @@ void sli_zigbee_debug_print_buffer(uint32_t group_type,
 #define sl_zigbee_legacy_af_debug_print(...) sli_zigbee_debug_print(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_LEGACY_AF_DEBUG), false, __VA_ARGS__)
 #define sl_zigbee_legacy_af_debug_println(...) sli_zigbee_debug_print(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_LEGACY_AF_DEBUG), true, __VA_ARGS__)
 #define sl_zigbee_legacy_af_debug_print_buffer(buffer, length, with_space) sli_zigbee_debug_print_buffer(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_LEGACY_AF_DEBUG), (buffer), (length), (with_space), "%02X")
-#define sl_zigbee_legacy_af_debug_print_string(buffer) sli_zigbee_debug_print_buffer(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_LEGACY_AF_DEBUG), buffer + 1, emberAfStringLength(buffer), false, "%c")
-#define sl_zigbee_legacy_af_debug_print_long_string(buffer) sli_zigbee_debug_print_buffer(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_LEGACY_AF_DEBUG), buffer + 2, emberAfLongStringLength(buffer), false, "%c")
+#define sl_zigbee_legacy_af_debug_print_string(buffer) sli_zigbee_debug_print_buffer(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_LEGACY_AF_DEBUG), (buffer + 1), (LIMIT_ATTR_STR_LENGTH(emberAfStringLength(buffer))), false, "%c")
+#define sl_zigbee_legacy_af_debug_print_long_string(buffer) sli_zigbee_debug_print_buffer(((uint32_t)SL_ZIGBEE_DEBUG_PRINT_TYPE_LEGACY_AF_DEBUG), (buffer + 2), (LIMIT_ATTR_STR_LENGTH(emberAfLongStringLength(buffer))), false, "%c")
 #else
 #define sl_zigbee_legacy_af_debug_print(...)
 #define sl_zigbee_legacy_af_debug_println(...)

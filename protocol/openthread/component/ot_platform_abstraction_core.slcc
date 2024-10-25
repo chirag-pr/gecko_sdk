@@ -45,6 +45,7 @@ include:
       - path: uart.h
   - path: protocol/openthread/platform-abstraction/efr32
     file_list:
+      - path: alarm.h
       - path: board_config.h
       - path: openthread-core-efr32-config.h
       - path: openthread-core-efr32-config-check.h

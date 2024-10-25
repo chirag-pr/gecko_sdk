@@ -14,6 +14,8 @@ requires:
   - name: zigbee_interpan
   - name: zigbee_address_table
   - name: zigbee_end_device_support
+config_file:
+  - path: protocol/zigbee/app/framework/plugin/test-harness-z3/config/test-harness-z3-config.h
 source:
   - path: protocol/zigbee/app/framework/plugin/test-harness-z3/test-harness-z3-core.c
   - path: protocol/zigbee/app/framework/plugin/test-harness-z3/test-harness-z3-mac.c
@@ -678,6 +680,8 @@ template_contribution:
           help: The PAN ID that will be used
         - type: uint32
           help: The negative behavior options for this command
+    condition:
+      - zigbee_zll_commissioning_client
   - name: cli_command
     value:
       group: touchlink

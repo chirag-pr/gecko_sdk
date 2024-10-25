@@ -40,9 +40,6 @@ requires:
   - name: rail_mux
     condition:
       - ot_stack
-  - name: zigbee_watchdog_periodic_refresh
-    condition:
-      - legacy_hal_wdog
   # Free RTOS Heap 3 implementation matches Micrium's the closest
   # Generally, we default to Heap 4. Therefore, we explicitly set this
   # to heap 3.

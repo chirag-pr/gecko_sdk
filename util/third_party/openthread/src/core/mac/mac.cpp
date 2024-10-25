@@ -35,25 +35,9 @@
 
 #include <stdio.h>
 
-#include "common/array.hpp"
-#include "common/as_core_type.hpp"
-#include "common/code_utils.hpp"
-#include "common/debug.hpp"
-#include "common/encoding.hpp"
-#include "common/locator_getters.hpp"
-#include "common/random.hpp"
-#include "common/string.hpp"
 #include "crypto/aes_ccm.hpp"
 #include "crypto/sha256.hpp"
 #include "instance/instance.hpp"
-#include "mac/mac_frame.hpp"
-#include "radio/radio.hpp"
-#include "thread/child.hpp"
-#include "thread/child_table.hpp"
-#include "thread/link_quality.hpp"
-#include "thread/mle_router.hpp"
-#include "thread/neighbor.hpp"
-#include "thread/thread_netif.hpp"
 
 namespace ot {
 namespace Mac {
@@ -98,6 +82,7 @@ Mac::Mac(Instance &aInstance)
     , mCslChannel(0)
     , mCslPeriod(0)
 #endif
+    , mWakeupChannel(OPENTHREAD_CONFIG_DEFAULT_WAKEUP_CHANNEL)
     , mActiveScanHandler(nullptr) // Initialize `mActiveScanHandler` and `mEnergyScanHandler` union
     , mScanHandlerContext(nullptr)
     , mLinks(aInstance)
@@ -234,7 +219,7 @@ Error Mac::ConvertBeaconToActiveScanResult(const RxFrame *aBeaconFrame, ActiveSc
     uint16_t             payloadLength;
 #endif
 
-    memset(&aResult, 0, sizeof(ActiveScanResult));
+    ClearAllBytes(aResult);
 
     VerifyOrExit(aBeaconFrame != nullptr, error = kErrorInvalidArgs);
 
@@ -340,7 +325,7 @@ void Mac::PerformEnergyScan(void)
     }
     else
     {
-        if (!GetRxOnWhenIdle())
+        if (!mRxOnWhenIdle)
         {
             mLinks.Receive(mScanChannel);
         }
@@ -414,7 +399,7 @@ void Mac::SetRxOnWhenIdle(bool aRxOnWhenIdle)
 #endif
     }
 
-    mLinks.SetRxOnWhenBackoff(mRxOnWhenIdle || mPromiscuous);
+    mLinks.SetRxOnWhenIdle(mRxOnWhenIdle || mPromiscuous);
     UpdateIdleMode();
 
 exit:
@@ -737,15 +722,17 @@ void Mac::FinishOperation(void)
 
 TxFrame *Mac::PrepareBeaconRequest(void)
 {
-    TxFrame  &frame = mLinks.GetTxFrames().GetBroadcastTxFrame();
-    Addresses addrs;
-    PanIds    panIds;
+    TxFrame      &frame = mLinks.GetTxFrames().GetBroadcastTxFrame();
+    TxFrame::Info frameInfo;
 
-    addrs.mSource.SetNone();
-    addrs.mDestination.SetShort(kShortAddrBroadcast);
-    panIds.SetDestination(kShortAddrBroadcast);
+    frameInfo.mAddrs.mSource.SetNone();
+    frameInfo.mAddrs.mDestination.SetShort(kShortAddrBroadcast);
+    frameInfo.mPanIds.SetDestination(kShortAddrBroadcast);
 
-    frame.InitMacHeader(Frame::kTypeMacCmd, Frame::kVersion2003, addrs, panIds, Frame::kSecurityNone);
+    frameInfo.mType    = Frame::kTypeMacCmd;
+    frameInfo.mVersion = Frame::kVersion2003;
+
+    frameInfo.PrepareHeadersIn(frame);
 
     IgnoreError(frame.SetCommandId(Frame::kMacCmdBeaconRequest));
 
@@ -756,10 +743,9 @@ TxFrame *Mac::PrepareBeaconRequest(void)
 
 TxFrame *Mac::PrepareBeacon(void)
 {
-    TxFrame  *frame;
-    Beacon   *beacon = nullptr;
-    Addresses addrs;
-    PanIds    panIds;
+    TxFrame      *frame;
+    TxFrame::Info frameInfo;
+    Beacon       *beacon = nullptr;
 #if OPENTHREAD_CONFIG_MAC_OUTGOING_BEACON_PAYLOAD_ENABLE
     uint8_t        beaconLength;
     BeaconPayload *beaconPayload = nullptr;
@@ -773,11 +759,14 @@ TxFrame *Mac::PrepareBeacon(void)
     frame = &mLinks.GetTxFrames().GetBroadcastTxFrame();
 #endif
 
-    addrs.mSource.SetExtended(GetExtAddress());
-    panIds.SetSource(mPanId);
-    addrs.mDestination.SetNone();
+    frameInfo.mAddrs.mSource.SetExtended(GetExtAddress());
+    frameInfo.mPanIds.SetSource(mPanId);
+    frameInfo.mAddrs.mDestination.SetNone();
 
-    frame->InitMacHeader(Frame::kTypeBeacon, Frame::kVersion2003, addrs, panIds, Frame::kSecurityNone);
+    frameInfo.mType    = Frame::kTypeBeacon;
+    frameInfo.mVersion = Frame::kVersion2003;
+
+    frameInfo.PrepareHeadersIn(*frame);
 
     beacon = reinterpret_cast<Beacon *>(frame->GetPayload());
     beacon->Init();
@@ -1134,9 +1123,13 @@ void Mac::RecordCcaStatus(bool aCcaSuccess, uint8_t aChannel)
     }
 
     // Only track the CCA success rate for frame transmissions
-    // on the PAN channel.
+    // on the PAN channel or the CSL channel.
 
+#if OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
+    if ((aChannel == mPanChannel) || (IsCslEnabled() && (aChannel == mCslChannel)))
+#else
     if (aChannel == mPanChannel)
+#endif
     {
         if (mCcaSampleCount < kMaxCcaSampleCount)
         {
@@ -1310,6 +1303,12 @@ void Mac::HandleTransmitDone(TxFrame &aFrame, RxFrame *aAckFrame, Error aError)
 #endif
 #if OPENTHREAD_FTD && OPENTHREAD_CONFIG_MAC_CSL_TRANSMITTER_ENABLE
                 ProcessCsl(*aAckFrame, dstAddr);
+#endif
+#if OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
+                if (!mRxOnWhenIdle && aFrame.HasCslIe())
+                {
+                    Get<DataPollSender>().ResetKeepAliveTimer();
+                }
 #endif
             }
         }
@@ -1631,7 +1630,7 @@ Error Mac::ProcessReceiveSecurity(RxFrame &aFrame, const Address &aSrcAddr, Neig
 
         if (keySequence > keyManager.GetCurrentKeySequence())
         {
-            keyManager.SetCurrentKeySequence(keySequence);
+            keyManager.SetCurrentKeySequence(keySequence, KeyManager::kApplySwitchGuard | KeyManager::kResetGuardTimer);
         }
     }
 
@@ -1658,6 +1657,8 @@ Error Mac::ProcessEnhAckSecurity(TxFrame &aTxFrame, RxFrame &aAckFrame)
 
     VerifyOrExit(aAckFrame.GetSecurityEnabled(), error = kErrorNone);
     VerifyOrExit(aAckFrame.IsVersion2015());
+
+    SuccessOrExit(aAckFrame.ValidatePsdu());
 
     IgnoreError(aAckFrame.GetSecurityLevel(securityLevel));
     VerifyOrExit(securityLevel == Frame::kSecurityEncMic32);
@@ -2101,7 +2102,7 @@ void Mac::SetPromiscuous(bool aPromiscuous)
     mShouldDelaySleep = false;
 #endif
 
-    mLinks.SetRxOnWhenBackoff(mRxOnWhenIdle || mPromiscuous);
+    mLinks.SetRxOnWhenIdle(mRxOnWhenIdle || mPromiscuous);
     UpdateIdleMode();
 }
 
@@ -2151,7 +2152,7 @@ const uint32_t *Mac::GetIndirectRetrySuccessHistogram(uint8_t &aNumberOfEntries)
 }
 #endif
 
-void Mac::ResetRetrySuccessHistogram() { memset(&mRetryHistogram, 0, sizeof(mRetryHistogram)); }
+void Mac::ResetRetrySuccessHistogram() { ClearAllBytes(mRetryHistogram); }
 #endif // OPENTHREAD_CONFIG_MAC_RETRY_SUCCESS_HISTOGRAM_ENABLE
 
 uint8_t Mac::ComputeLinkMargin(int8_t aRss) const { return ot::ComputeLinkMargin(GetNoiseFloor(), aRss); }
@@ -2344,19 +2345,17 @@ bool Mac::IsCslSupported(void) const
 #if OPENTHREAD_FTD && OPENTHREAD_CONFIG_MAC_CSL_TRANSMITTER_ENABLE
 void Mac::ProcessCsl(const RxFrame &aFrame, const Address &aSrcAddr)
 {
-    const uint8_t *cur;
-    Child         *child;
-    const CslIe   *csl;
+    Child       *child;
+    const CslIe *csl;
 
     VerifyOrExit(aFrame.IsVersion2015() && aFrame.GetSecurityEnabled());
 
-    cur = aFrame.GetHeaderIe(CslIe::kHeaderIeId);
-    VerifyOrExit(cur != nullptr);
+    csl = aFrame.GetCslIe();
+    VerifyOrExit(csl != nullptr);
 
     child = Get<ChildTable>().FindChild(aSrcAddr, Child::kInStateAnyExceptInvalid);
     VerifyOrExit(child != nullptr);
 
-    csl = reinterpret_cast<const CslIe *>(cur + sizeof(HeaderIe));
     VerifyOrExit(csl->GetPeriod() >= kMinCslIePeriod);
 
     child->SetCslPeriod(csl->GetPeriod());
@@ -2402,6 +2401,25 @@ void Mac::SetRadioFilterEnabled(bool aFilterEnabled)
 {
     mLinks.GetSubMac().SetRadioFilterEnabled(aFilterEnabled);
     UpdateIdleMode();
+}
+#endif
+
+#if OPENTHREAD_CONFIG_WAKEUP_COORDINATOR_ENABLE || OPENTHREAD_CONFIG_WAKEUP_END_DEVICE_ENABLE
+Error Mac::SetWakeupChannel(uint8_t aChannel)
+{
+    Error error = kErrorNone;
+
+    if (aChannel == 0)
+    {
+        mWakeupChannel = GetPanChannel();
+        ExitNow();
+    }
+
+    VerifyOrExit(mSupportedChannelMask.ContainsChannel(aChannel), error = kErrorInvalidArgs);
+    mWakeupChannel = aChannel;
+
+exit:
+    return error;
 }
 #endif
 

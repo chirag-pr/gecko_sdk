@@ -1248,7 +1248,8 @@ typedef enum EZwaveCommandStatusType
   EZWAVECOMMANDSTATUS_SECURE_ON_RX_FRAME_RECEIVED_INDICATOR,        ///< Frame received from NodeID indicator
   EZWAVECOMMANDSTATUS_ZW_SET_LR_CHANNEL,                            /**< EZWAVECOMMANDSTATUS_ZW_SET_LR_CHANNEL */
   EZWAVECOMMANDSTATUS_ZW_GET_TX_POWER_MAX_SUPPORTED,                /**< EZWAVECOMMANDSTATUS_ZW_GET_TX_POWER_MAX_SUPPORTED */
-  NUM_EZWAVECOMMANDSTATUS                                           /**< NUM_EZWAVECOMMANDSTATUS */
+  NUM_EZWAVECOMMANDSTATUS,                                          /**< NUM_EZWAVECOMMANDSTATUS */
+  EZWAVECOMMANDSTATUS_INVALID = 0xFF
 } EZwaveCommandStatusType;
 
 /**
@@ -1262,7 +1263,8 @@ typedef enum EZwaveReceiveType
   EZWAVERECEIVETYPE_SECURITY_EVENT,                                    /**< EZWAVERECEIVETYPE_SECURITY_EVENT */
   EZWAVERECEIVETYPE_STAY_AWAKE,                                        /**< EZWAVERECEIVETYPE_STAY_AWAKE */
   EZWAVERECEIVETYPE_SECURE_FRAME_RECEIVED,                             /**< Event received from the SECURE module. */
-  NUM_EZWAVERECEIVETYPE                                                /**< NUM_EZWAVERECEIVETYPE */
+  NUM_EZWAVERECEIVETYPE,                                               /**< NUM_EZWAVERECEIVETYPE */
+  EZWAVERECEIVETYPE_INVALID = 0xFF
 } EZwaveReceiveType;
 
 /**

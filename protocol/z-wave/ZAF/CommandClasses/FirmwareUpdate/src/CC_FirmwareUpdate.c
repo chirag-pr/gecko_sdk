@@ -126,7 +126,7 @@ CC_FirmwareUpdate_handler(
     case FIRMWARE_UPDATE_MD_REQUEST_GET_V5:
       {
         uint8_t status = 0;
-        zaf_tx_options_t tx_options;
+        zaf_tx_options_t tx_options = { 0 };
 
         handleCmdClassFirmwareUpdateMdReqGet(
             rxOpt,

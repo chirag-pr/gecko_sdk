@@ -330,7 +330,7 @@ CC_FirmwareUpdate_ActivationStatusReport_tx(
     uint16_t checksum,
     uint8_t status)
 {
-  zaf_tx_options_t tx_options;
+  zaf_tx_options_t tx_options = { 0 };
   // Activation supports the Z-Wave firmware only.
   const uint8_t FIRMWARE_TARGET = 0;
   uint16_t manufacturerID;

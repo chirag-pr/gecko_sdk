@@ -912,6 +912,9 @@ uint16_t sl_sleeptimer_get_clock_accuracy(void);
 ///
 ///   Timer structures must be allocated by the user. The function is called from within an interrupt handler with interrupts enabled.
 ///
+///   As sleeptimer callback functions are executed in ISR, they should be kept simple and short.
+///   For periodic timers, the sleeptimer's callbacks need to be shorter than the timer's period to allow the application to exit the interrupt context.
+///
 ///   @n @subsection timekeeping Timekeeping
 ///
 ///   A 64-bits tick counter is accessible through the @li uint64_t sl_sleeptimer_get_tick_count64(void) API. It keeps the tick count since the initialization of the driver

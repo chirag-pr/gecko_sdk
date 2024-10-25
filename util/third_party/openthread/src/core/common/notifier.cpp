@@ -33,12 +33,7 @@
 
 #include "notifier.hpp"
 
-#include "border_router/routing_manager.hpp"
-#include "common/array.hpp"
-#include "common/code_utils.hpp"
-#include "common/debug.hpp"
-#include "common/locator_getters.hpp"
-#include "common/log.hpp"
+#include "instance/instance.hpp"
 
 namespace ot {
 
@@ -210,7 +205,7 @@ void Notifier::LogEvents(Events aEvents) const
     bool                           didLog   = false;
     String<kFlagsStringBufferSize> string;
 
-    for (uint8_t bit = 0; bit < sizeof(Events::Flags) * CHAR_BIT; bit++)
+    for (uint8_t bit = 0; bit < BitSizeOf(Events::Flags); bit++)
     {
         VerifyOrExit(flags != 0);
 

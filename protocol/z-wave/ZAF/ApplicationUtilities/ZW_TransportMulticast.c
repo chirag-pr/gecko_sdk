@@ -277,7 +277,7 @@ static MultiChannelTXResult_t TransmitMultiChannel(__attribute__((unused)) trans
 
 static MulticastTXResult_t TransmitMultiCast(__attribute__((unused)) transmission_result_t * pTxResult)
 {
-  NODE_MASK_TYPE node_mask;
+  NODE_MASK_TYPE node_mask = { 0 };
   ZW_NodeMaskClear(node_mask, sizeof(NODE_MASK_TYPE));
 
   singlecast_node_count = 0;

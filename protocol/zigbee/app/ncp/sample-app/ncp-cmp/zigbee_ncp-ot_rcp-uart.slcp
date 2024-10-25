@@ -14,7 +14,7 @@ component:
   - id: zigbee_debug_basic
   - id: zigbee_debug_print
   - id: token_manager
-  - id: zigbee_pro_stack_rail_mux
+  - id: zigbee_pro_stack
   - id: zigbee_source_route
   - id: zigbee_gp
   - id: zigbee_r22_support
@@ -103,8 +103,6 @@ configuration:
     value: 1
   - name: OPENTHREAD_CONFIG_LOG_OUTPUT
     value: OPENTHREAD_CONFIG_LOG_OUTPUT_PLATFORM_DEFINED
-  - name: OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
-    value: 1
   - name: OPENTHREAD_CONFIG_PLATFORM_KEY_REFERENCES_ENABLE
     value: 0
   - name: SL_LEGACY_HAL_WDOG_PERIOD

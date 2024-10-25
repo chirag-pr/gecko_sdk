@@ -133,6 +133,24 @@
 #define RAIL_GetTxPacketsRemaining sl_rail_mux_GetTxPacketsRemaining
 
 #define RAIL_ResetFifo sl_rail_mux_ResetFifo
+#define RAIL_ConfigRxDutyCycle sl_rail_mux_ConfigRxDutyCycle
+#define RAIL_EnableRxDutyCycle sl_rail_mux_EnableRxDutyCycle
+#define RAIL_GetTxFifoSpaceAvailable sl_rail_mux_GetTxFifoSpaceAvailable
+#define RAIL_IEEE802154_AcceptFrames sl_rail_mux_IEEE802154_AcceptFrames
+#define RAIL_IEEE802154_Config2p4GHzRadioAntDivCoex sl_rail_mux_IEEE802154_Config2p4GHzRadioAntDivCoex
+#define RAIL_IEEE802154_Config2p4GHzRadioAntDivCoexFem sl_rail_mux_IEEE802154_Config2p4GHzRadioAntDivCoexFem
+#define RAIL_IEEE802154_Config2p4GHzRadioAntDivFem sl_rail_mux_IEEE802154_Config2p4GHzRadioAntDivFem
+#define RAIL_IEEE802154_Config2p4GHzRadioCoex sl_rail_mux_IEEE802154_Config2p4GHzRadioCoex
+#define RAIL_IEEE802154_Config2p4GHzRadioCoexFem sl_rail_mux_IEEE802154_Config2p4GHzRadioCoexFem
+#define RAIL_IEEE802154_Config2p4GHzRadioFem sl_rail_mux_IEEE802154_Config2p4GHzRadioFem
+#define RAIL_IEEE802154_ConfigCcaMode sl_rail_mux_IEEE802154_ConfigCcaMode
+#define RAIL_IEEE802154_ConfigEOptions sl_rail_mux_IEEE802154_ConfigEOptions
+#define RAIL_IEEE802154_ConfigGOptions sl_rail_mux_IEEE802154_ConfigGOptions
+#define RAIL_IEEE802154_SetPtiRadioConfig sl_rail_mux_IEEE802154_SetPtiRadioConfig
+#define RAIL_SetRssiOffset sl_rail_mux_SetRssiOffset
+#define RAIL_StartTxStreamAlt sl_rail_mux_StartTxStreamAlt
+#define RAIL_IEEE802154_Config2p4GHzRadio1MbpsFec sl_rail_mux_IEEE802154_Config2p4GHzRadio1MbpsFec
+#define RAIL_GetRxTimeFrameEnd sl_rail_mux_GetRxTimeFrameEnd
 
 #define ATOMIC_SECTION(RETURN_TYPE, yourcode, ...) \
   ({                                               \

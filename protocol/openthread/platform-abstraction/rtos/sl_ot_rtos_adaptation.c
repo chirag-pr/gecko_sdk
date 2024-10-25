@@ -28,12 +28,12 @@
 #include <mbedtls/platform.h>
 
 #include "cmsis_os2.h"
-#include "sl_ot_rtos_adaptation.h"
-#include "sl_ot_init.h"
 #include "sl_cmsis_os2_common.h"
 #include "sl_component_catalog.h"
+#include "sl_ot_init.h"
+#include "sl_ot_rtos_adaptation.h"
 
-static osThreadId_t      sMainThread   = NULL;
+static osThreadId_t sMainThread = NULL;
 __ALIGNED(8) static uint8_t openthread_task_stack[SL_OPENTHREAD_OS_STACK_TASK_SIZE];
 __ALIGNED(4) static uint8_t openthread_task_cb[osThreadCbSize];
 
@@ -41,18 +41,18 @@ static void mainloop(void *aContext);
 otInstance *otGetInstance(void);
 
 const osThreadAttr_t otMainThreadAttr = {
-  .name  = "otMainThread",
-  .attr_bits = 0u,
-  .stack_size = SL_OPENTHREAD_OS_STACK_TASK_SIZE,
-  .stack_mem = openthread_task_stack,
-  .cb_mem = openthread_task_cb,
-  .cb_size = osThreadCbSize,
-  .priority = (osPriority_t) SL_OPENTHREAD_RTOS_TASK_PRIORITY,
+    .name       = "otMainThread",
+    .attr_bits  = 0u,
+    .stack_size = SL_OPENTHREAD_OS_STACK_TASK_SIZE,
+    .stack_mem  = openthread_task_stack,
+    .cb_mem     = openthread_task_cb,
+    .cb_size    = osThreadCbSize,
+    .priority   = (osPriority_t)SL_OPENTHREAD_RTOS_TASK_PRIORITY,
 };
 
 void sl_ot_rtos_init(void)
 {
-    sMainThread =  osThreadNew(mainloop, NULL, &otMainThreadAttr);
+    sMainThread = osThreadNew(mainloop, NULL, &otMainThreadAttr);
     // Handling OpenThread initialization here
     // ensures that, any functions calling mbedTLS API
     // (and subsequently OSMutexPend), are called after the kernel has started.
@@ -74,16 +74,15 @@ static void mainloop(void *aContext)
         otTaskletsProcess(instance);
         sl_ot_rtos_application_tick();
 
-        if (!otTaskletsArePending(instance)) {
-            osThreadFlagsWait (0x0001, osFlagsWaitAny, osWaitForever);
+        if (!otTaskletsArePending(instance))
+        {
+            osThreadFlagsWait(0x0001, osFlagsWaitAny, osWaitForever);
         }
     }
 
     otInstanceFinalize(instance);
     osThreadTerminate(sMainThread);
 }
-
-
 
 static void resumeThread()
 {

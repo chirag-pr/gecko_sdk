@@ -35,7 +35,7 @@
 
 #if OPENTHREAD_CONFIG_MLE_LINK_METRICS_INITIATOR_ENABLE == 0
 #error \
-    "OPENTHREAD_CONFIG_LINK_METRICS_MANAGER_ENABLE can only be used when OPENTHREAD_CONFIG_LINK_METRICS_INITIATOR_ENABLE is true"
+    "OPENTHREAD_CONFIG_LINK_METRICS_MANAGER_ENABLE can only be used when OPENTHREAD_CONFIG_MLE_LINK_METRICS_INITIATOR_ENABLE is true"
 #endif
 
 #include <openthread/link_metrics.h>
@@ -98,7 +98,6 @@ namespace Utils {
  *   An OT API is provided to get the link metrics data of any
  *   subject (neighbor) by its extended address. In production, this
  *   data may be fetched by some other means like RPC.
- *
  */
 
 class LinkMetricsManager : public InstanceLocator, private NonCopyable
@@ -147,15 +146,21 @@ public:
      * Initializes a `LinkMetricsManager` object.
      *
      * @param[in]   aInstance  A reference to the OpenThread instance.
-     *
      */
     explicit LinkMetricsManager(Instance &aInstance);
+
+    /**
+     * Is the LinkMetricsManager feature enabled.
+     *
+     * @retval TRUE   Link Metrics Manager is enabled.
+     * @retval FALSE  Link Metrics Manager is not enabled.
+     */
+    bool IsEnabled(void) { return mEnabled; }
 
     /**
      * Enable/Disable the LinkMetricsManager feature.
      *
      * @param[in]   aEnable  A boolean to indicate enable or disable.
-     *
      */
     void SetEnabled(bool aEnable);
 
@@ -168,7 +173,6 @@ public:
      * @retval kErrorNone             Successfully got the metrics value.
      * @retval kErrorInvalidArgs      The arguments are invalid.
      * @retval kNotFound              No neighbor with the given extended address is found.
-     *
      */
     Error GetLinkMetricsValueByExtAddr(const Mac::ExtAddress &aExtAddress, LinkMetrics::MetricsValues &aMetricsValues);
 
@@ -212,7 +216,6 @@ private:
 
 /**
  * @}
- *
  */
 
 } // namespace Utils

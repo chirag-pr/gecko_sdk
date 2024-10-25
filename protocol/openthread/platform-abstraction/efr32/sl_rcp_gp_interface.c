@@ -162,7 +162,7 @@ void sl_gp_intf_buffer_pkt(otInstance *aInstance)
 
 bool sl_gp_intf_should_buffer_pkt(otInstance *aInstance, otRadioFrame *aFrame, bool isRxFrame)
 {
-    bool     shouldBufferPacket = false;
+    bool shouldBufferPacket = false;
 
 #if OPENTHREAD_CONFIG_DIAG_ENABLE
     // Exit immediately if diag mode is enabled.
@@ -204,8 +204,8 @@ bool sl_gp_intf_should_buffer_pkt(otInstance *aInstance, otRadioFrame *aFrame, b
         if (cmdId == GP_CHANNEL_REQUEST_CMD_ID && isRxFrame && gp_state == SL_GP_STATE_WAITING_FOR_PKT)
         {
             // Send out the buffered frame
-            gp_state           = SL_GP_STATE_SEND_RESPONSE;
-            gpStateTimeOut     = aFrame->mInfo.mRxInfo.mTimestamp + GP_RX_OFFSET_IN_MICRO_SECONDS;
+            gp_state       = SL_GP_STATE_SEND_RESPONSE;
+            gpStateTimeOut = aFrame->mInfo.mRxInfo.mTimestamp + GP_RX_OFFSET_IN_MICRO_SECONDS;
             otLogDebgPlat("GP RCP INTF : (%s) Received GP_CHANNEL_REQUEST_CMD_ID - Send the Channel configuration",
                           isRxFrame ? "Rx" : "Tx");
         }
@@ -225,8 +225,9 @@ bool sl_gp_intf_should_buffer_pkt(otInstance *aInstance, otRadioFrame *aFrame, b
         uint8_t extFc = *(gpFrameStartIndex + GP_EXND_FC_INDEX);
 
         // Process only unsecured commissioning frames for Tx/Rx with correct direction and RxAfterTx fields
-        // A.3.9.1, step 12: the proxies (also in combos) receiving a Commissioning GPDF (0xE3), Application Description GPDF (0xE4),
-        // any other GPD command from the GPD CommandID range 0xE5 – 0xEF, any GPD command from the GPD CommandID range 0xB0 – 0xBF
+        // A.3.9.1, step 12: the proxies (also in combos) receiving a Commissioning GPDF (0xE3), Application Description
+        // GPDF (0xE4), any other GPD command from the GPD CommandID range 0xE5 – 0xEF, any GPD command from the GPD
+        // CommandID range 0xB0 – 0xBF
 
         if ((!isRxFrame && GP_NWK_UNSECURED_TX_DATA_FRAME(extFc))
             || (isRxFrame && GP_NWK_UNSECURED_RX_DATA_FRAME(extFc)))
@@ -239,7 +240,9 @@ bool sl_gp_intf_should_buffer_pkt(otInstance *aInstance, otRadioFrame *aFrame, b
                     // Buffer the frame
                     shouldBufferPacket = true;
                 }
-                else if ((cmdId == GP_COMMISSIONINGING_CMD_ID || (0xE4 <= cmdId && cmdId <= 0xEF) || (0xB0 <= cmdId && cmdId <= 0xBF)) && isRxFrame && gp_state == SL_GP_STATE_WAITING_FOR_PKT)
+                else if ((cmdId == GP_COMMISSIONINGING_CMD_ID || (0xE4 <= cmdId && cmdId <= 0xEF)
+                          || (0xB0 <= cmdId && cmdId <= 0xBF))
+                         && isRxFrame && gp_state == SL_GP_STATE_WAITING_FOR_PKT)
                 {
                     otRadioFrame *aTxFrame = otPlatRadioGetTransmitBuffer(aInstance);
                     // Match the gpd src Id ?
@@ -261,7 +264,9 @@ bool sl_gp_intf_should_buffer_pkt(otInstance *aInstance, otRadioFrame *aFrame, b
                     // Buffer the frame
                     shouldBufferPacket = true;
                 }
-                else if ((cmdId == GP_COMMISSIONINGING_CMD_ID || (0xE4 <= cmdId && cmdId <= 0xEF) || (0xB0 <= cmdId && cmdId <= 0xBF)) && isRxFrame && gp_state == SL_GP_STATE_WAITING_FOR_PKT)
+                else if ((cmdId == GP_COMMISSIONINGING_CMD_ID || (0xE4 <= cmdId && cmdId <= 0xEF)
+                          || (0xB0 <= cmdId && cmdId <= 0xBF))
+                         && isRxFrame && gp_state == SL_GP_STATE_WAITING_FOR_PKT)
                 {
                     otRadioFrame *aTxFrame = otPlatRadioGetTransmitBuffer(aInstance);
                     // Check the eui64 and app endpoint to send out the buffer packet.
@@ -275,8 +280,8 @@ bool sl_gp_intf_should_buffer_pkt(otInstance *aInstance, otRadioFrame *aFrame, b
                         && (gpFrameStartIndex[GP_APP_EP_INDEX_WITH_APP_MODE_1]
                             == (aTxFrame->mPsdu)[BUFFERED_PSDU_GP_APP_EP_INDEX_WITH_APP_MODE_1]))
                     {
-                        gp_state           = SL_GP_STATE_SEND_RESPONSE;
-                        gpStateTimeOut     = aFrame->mInfo.mRxInfo.mTimestamp + GP_RX_OFFSET_IN_MICRO_SECONDS;
+                        gp_state       = SL_GP_STATE_SEND_RESPONSE;
+                        gpStateTimeOut = aFrame->mInfo.mRxInfo.mTimestamp + GP_RX_OFFSET_IN_MICRO_SECONDS;
                     }
                 }
             }
@@ -293,7 +298,6 @@ exit:
 }
 #endif // OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
 
-
 bool sl_gp_intf_is_gp_pkt(otRadioFrame *aFrame)
 {
     /* clang-format off */
@@ -304,10 +308,10 @@ bool sl_gp_intf_is_gp_pkt(otRadioFrame *aFrame)
 
     /* clang-format on */
 
-    bool isGpPkt = false;
+    bool     isGpPkt           = false;
     uint8_t *gpFrameStartIndex = efr32GetPayload(aFrame);
     otEXPECT_ACTION(gpFrameStartIndex != NULL, isGpPkt = false);
-    uint8_t  fc                = *gpFrameStartIndex;
+    uint8_t fc = *gpFrameStartIndex;
 
     // Criteria:
     //  - The basic Identification of a GPDF Frame : The minimum GPDF length need to be 10 in this case for any
@@ -317,7 +321,7 @@ bool sl_gp_intf_is_gp_pkt(otRadioFrame *aFrame)
 
     bool lengthCheck         = (aFrame->mLength >= GP_MIN_MAINTENANCE_FRAME_LENGTH);
     bool networkVersionCheck = GP_NWK_PROTOCOL_VERSION_CHECK(fc);
-    bool frameVersionCheck     = (efr32GetFrameVersion(aFrame) == IEEE802154_FRAME_VERSION_2003);
+    bool frameVersionCheck   = (efr32GetFrameVersion(aFrame) == IEEE802154_FRAME_VERSION_2003);
 
     isGpPkt = (lengthCheck && networkVersionCheck && frameVersionCheck);
 #if 0 // Debugging

@@ -26,6 +26,18 @@
 #endif
 #include CONFIGURATION_HEADER
 
+// The ZCL Long String type data type takes first 2 bytes as the length
+// And the sl_zigbee_af_read_attribute takes an uint8_t as the output length.
+// So, it is important to ensure the largest value is less than the 253.
+// NOTE : SL_MIN is not used instead following MIN is created using macro comparison.
+//        because, SL_MIN for GCC expands to creating variable of same type using __typeof__,
+//        assigning the supplied values and comparing, which causes a gcc error
+//        "error: variable length array declaration not allowed at file scope" for unit tests
+//        where ATTRIBUTE_MAX_DATA_SIZE used in definition local arrays for attribute
+//        inside a function.
+#define MIN(a, b) ((a) > (b) ? (b) : (a))
+#define ATTRIBUTE_MAX_DATA_SIZE MIN(ATTRIBUTE_LARGEST, 253)
+
 #ifdef EZSP_HOST
 // Includes needed for ember related functions for the EZSP host
   #include "stack/include/error.h"

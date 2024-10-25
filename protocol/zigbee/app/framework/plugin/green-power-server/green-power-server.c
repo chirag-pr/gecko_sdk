@@ -77,7 +77,6 @@ typedef struct {
   uint8_t numberOfEndpoints;
 } SupportedGpdCommandClusterEndpointMap;
 
-EmberAfStatus defaultResponseFailureStatus;
 sl_zigbee_event_t emberAfPluginGreenPowerServerGenericSwitchCommissioningTimeoutEvent;
 void emberAfPluginGreenPowerServerGenericSwitchCommissioningTimeoutEventHandler(sl_zigbee_event_t * event);
 sl_zigbee_event_t emberAfPluginGreenPowerServerMultiSensorCommissioningTimeoutEvent;
@@ -2429,21 +2428,20 @@ WEAK(void emberAfPluginGreenPowerServerStackStatusCallback(EmberStatus status))
 // device configuration.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool sli_zigbee_af_green_power_server_gp_sink_commissioning_mode_command_handler(uint8_t options,
-                                                                                 uint16_t gpmAddrForSecurity,
-                                                                                 uint16_t gpmAddrForPairing,
-                                                                                 uint8_t sinkEndpoint)
+EmberAfStatus sli_zigbee_af_green_power_server_gp_sink_commissioning_mode_command_handler(uint8_t options,
+                                                                                          uint16_t gpmAddrForSecurity,
+                                                                                          uint16_t gpmAddrForPairing,
+                                                                                          uint8_t sinkEndpoint)
 {
   // Test 4..4.6 - not a sink ep or bcast ep - drop
   if (!isValidAppEndpoint(sinkEndpoint)) {
     emberAfGreenPowerClusterPrintln("DROP - Comm Mode Callback: Sink EP not supported");
     // 3.3.4.8.2
-    defaultResponseFailureStatus = EMBER_ZCL_STATUS_NOT_FOUND;
-    return false;
+    return EMBER_ZCL_STATUS_NOT_FOUND;
   }
   if ((options & EMBER_AF_GP_SINK_COMMISSIONING_MODE_OPTIONS_INVOLVE_GPM_IN_SECURITY)
       || (options & EMBER_AF_GP_SINK_COMMISSIONING_MODE_OPTIONS_INVOLVE_GPM_IN_PAIRING)) {
-    return false;
+    return EMBER_ZCL_STATUS_UNSUP_COMMAND;
   }
   EmberAfAttributeType type;
   uint8_t gpsSecurityLevelAttribute = 0;
@@ -2457,7 +2455,7 @@ bool sli_zigbee_af_green_power_server_gp_sink_commissioning_mode_command_handler
   // Reject the req if InvolveTC is et in the attribute
   if (secLevelStatus == EMBER_ZCL_STATUS_SUCCESS
       && (gpsSecurityLevelAttribute & 0x08)) {
-    return false;
+    return EMBER_ZCL_STATUS_UNSUP_COMMAND;
   }
   uint16_t commissioningWindow = 0;
   uint8_t proxyOptions = 0;
@@ -2476,9 +2474,8 @@ bool sli_zigbee_af_green_power_server_gp_sink_commissioning_mode_command_handler
                 | EMBER_AF_GP_SINK_COMMISSIONING_MODE_OPTIONS_INVOLVE_GPM_IN_PAIRING))) {
       //these SHALL be 0 for now
       //TODO also check involve-TC
-      defaultResponseFailureStatus = EMBER_ZCL_STATUS_INVALID_VALUE;
       commissioningState.inCommissioningMode = false;
-      return false;
+      return EMBER_ZCL_STATUS_INVALID_VALUE;
     }
     // default 180s of GP specification
     commissioningWindow = EMBER_AF_ZCL_CLUSTER_GP_GPS_COMMISSIONING_WINDOWS_DEFAULT_TIME_S;
@@ -2557,8 +2554,7 @@ bool sli_zigbee_af_green_power_server_gp_sink_commissioning_mode_command_handler
   if (emberAfFillCommandGreenPowerClusterGpProxyCommissioningModeSmart(proxyOptions,
                                                                        commissioningWindow,
                                                                        0) == 0) {
-    defaultResponseFailureStatus = EMBER_ZCL_STATUS_INSUFFICIENT_SPACE;
-    return false;
+    return EMBER_ZCL_STATUS_INSUFFICIENT_SPACE;
   }
 
   EmberApsFrame *apsFrame;
@@ -2586,7 +2582,7 @@ bool sli_zigbee_af_green_power_server_gp_sink_commissioning_mode_command_handler
                                                                            status);
     #endif // SL_CATALOG_ZIGBEE_GREEN_POWER_CLIENT_PRESENT
   }
-  return true;
+  return EMBER_ZCL_STATUS_SUCCESS;
 }
 
 //Green Power Cluster Gp Notification
@@ -2631,6 +2627,7 @@ bool emberAfGreenPowerClusterGpNotificationCallback(EmberAfClusterCommand *cmd)
                          cmd_data.gppShortAddress,
                          ((cmd_data.options & EMBER_AF_GP_NOTIFICATION_OPTION_RX_AFTER_TX) ? true : false),
                          cmd_data.gpdCommandPayload);
+    emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
     return true;
   }
   emberAfGreenPowerClusterPrintln("command %d", cmd_data.gpdCommandId);
@@ -2679,6 +2676,7 @@ bool emberAfGreenPowerClusterGpNotificationCallback(EmberAfClusterCommand *cmd)
                     &gpdAddr,
                     true,
                     true);
+    emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
     return true;
   }
 
@@ -2704,6 +2702,7 @@ bool emberAfGreenPowerClusterGpNotificationCallback(EmberAfClusterCommand *cmd)
                                                  cmd_data.gpdCommandPayload);
     #endif // SL_CATALOG_ZIGBEE_GREEN_POWER_TRANSLATION_TABLE_PRESENT
   }
+  emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
   return true;
 }
 
@@ -2835,6 +2834,7 @@ bool emberAfGreenPowerClusterGpCommissioningNotificationCallback(EmberAfClusterC
                                              commissioningGpd);
     }
   }
+  emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
   return true;
 }
 
@@ -2848,10 +2848,12 @@ bool emberAfGreenPowerClusterGpSinkCommissioningModeCallback(EmberAfClusterComma
     return false;
   }
 
-  return sli_zigbee_af_green_power_server_gp_sink_commissioning_mode_command_handler(cmd_data.options,
-                                                                                     cmd_data.gpmAddrForSecurity,
-                                                                                     cmd_data.gpmAddrForPairing,
-                                                                                     cmd_data.sinkEndpoint);
+  EmberAfStatus status = sli_zigbee_af_green_power_server_gp_sink_commissioning_mode_command_handler(cmd_data.options,
+                                                                                                     cmd_data.gpmAddrForSecurity,
+                                                                                                     cmd_data.gpmAddrForPairing,
+                                                                                                     cmd_data.sinkEndpoint);
+  emberAfSendImmediateDefaultResponse(status);
+  return true;
 }
 
 #ifdef SL_CATALOG_ZIGBEE_GREEN_POWER_CLIENT_PRESENT
@@ -2902,12 +2904,14 @@ bool emberAfGreenPowerClusterGpPairingConfigurationCallback(EmberAfClusterComman
   if (gpConfigAtion == EMBER_ZCL_GP_PAIRING_CONFIGURATION_ACTION_NO_ACTION) {
     sendGpPairingLookingUpAddressInSinkEntry(&gpdAddr,
                                              (cmd_data.actions & EMBER_AF_GP_PAIRING_CONFIGURATION_ACTIONS_SEND_GP_PAIRING));
+    emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
     return true;
   }
   // Action = 0b100 (Remove GPD)
   // Input(s) - Gpd Address
   if (gpConfigAtion == EMBER_ZCL_GP_PAIRING_CONFIGURATION_ACTION_REMOVE_GPD) {
     decommissionGpd(0, 0, &gpdAddr, true, cmd_data.actions & EMBER_AF_GP_PAIRING_CONFIGURATION_ACTIONS_SEND_GP_PAIRING);
+    emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
     return true;
   }
   // Action = 0b011 (Remove Pairing)
@@ -2922,6 +2926,7 @@ bool emberAfGreenPowerClusterGpPairingConfigurationCallback(EmberAfClusterComman
         || ((gpdAddr.applicationId == EMBER_GP_APPLICATION_IEEE_ADDRESS)
             && emberAfMemoryByteCompare(gpdAddr.id.gpdIeeeAddress, EUI64_SIZE, 0xFF))) {
       // TODO: apply action to all GPD with this particular applicationID (SrcId or IEEE)
+      emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
       return true;
     }
 
@@ -2960,6 +2965,7 @@ bool emberAfGreenPowerClusterGpPairingConfigurationCallback(EmberAfClusterComman
       }
       decommissionGpd(0, 0, &gpdAddr, false, cmd_data.actions & EMBER_AF_GP_PAIRING_CONFIGURATION_ACTIONS_SEND_GP_PAIRING);
     }
+    emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
     return true;
   }
   // All other command actions would need a temporary storage
@@ -3129,6 +3135,7 @@ bool emberAfGreenPowerClusterGpPairingConfigurationCallback(EmberAfClusterComman
                                      delay * MILLISECOND_TICKS_PER_SECOND);
         // All set to collect the report descriptors
         commissioningGpd->commissionState = GP_SINK_COMM_STATE_COLLECT_REPORTS;
+        emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
         return true;
       }
       // Replace or Extend Sink with new application information, then create TT entries as well - if the application description is not following
@@ -3148,6 +3155,7 @@ bool emberAfGreenPowerClusterGpPairingConfigurationCallback(EmberAfClusterComman
       commissioningGpd->commissionState = GP_SINK_COMM_STATE_FINALISE_PAIRING;
       commissioningGpd->preSinkCbSource = GP_PRE_SINK_PAIRING_CALLBACK_PAIRING_CONFIGURATION;
       finalisePairing(commissioningGpd);
+      emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
       return true;
     }
     // Action = 0b101
@@ -3178,15 +3186,18 @@ bool emberAfGreenPowerClusterGpPairingConfigurationCallback(EmberAfClusterComman
       }
       if (commissioningGpd->numberOfReports != commissioningGpd->totalNbOfReport) {
         // still to collect more reports
+        emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
         return true;
       }
       // Report collection is over - finalise the pairing
       commissioningGpd->commissionState = GP_SINK_COMM_STATE_FINALISE_PAIRING;
       commissioningGpd->preSinkCbSource = GP_PRE_SINK_PAIRING_CALLBACK_PAIRING_CONFIGURATION;
       finalisePairing(commissioningGpd);
+      emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
       return true;
     }
   }
+  emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
   return true;
 }
 
@@ -3356,6 +3367,7 @@ bool emberAfGreenPowerClusterGpSinkTableRequestCallback(EmberAfClusterCommand *c
       // nothing, other value of requestType are reserved
     }
   }
+  emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
   kickout: return true;
 }
 
@@ -3524,7 +3536,6 @@ uint32_t emberAfGreenPowerClusterServerCommandParse(sl_service_opcode_t opcode,
                                                     sl_service_function_context_t *context)
 {
   (void)opcode;
-  defaultResponseFailureStatus = EMBER_ZCL_STATUS_UNSUP_COMMAND;
   EmberAfClusterCommand *cmd = (EmberAfClusterCommand *)context->data;
   bool wasHandled = false;
 
@@ -3574,7 +3585,7 @@ uint32_t emberAfGreenPowerClusterServerCommandParse(sl_service_opcode_t opcode,
 
   return ((wasHandled)
           ? EMBER_ZCL_STATUS_SUCCESS
-          : defaultResponseFailureStatus);
+          : EMBER_ZCL_STATUS_UNSUP_COMMAND);
 }
 
 // This callback is application-specific

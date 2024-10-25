@@ -16,6 +16,7 @@ root_path: util/third_party/openthread/src/core
 source:
       - path: api/backbone_router_api.cpp
       - path: api/backbone_router_ftd_api.cpp
+      - path: api/ble_secure_api.cpp
       - path: api/border_agent_api.cpp
       - path: api/border_router_api.cpp
       - path: api/border_routing_api.cpp
@@ -46,6 +47,7 @@ source:
       - path: api/logging_api.cpp
       - path: api/mesh_diag_api.cpp
       - path: api/message_api.cpp
+      - path: api/mdns_api.cpp
       - path: api/multi_radio_api.cpp
       - path: api/nat64_api.cpp
       - path: api/netdata_api.cpp
@@ -68,6 +70,7 @@ source:
       - path: api/thread_ftd_api.cpp
       - path: api/trel_api.cpp
       - path: api/udp_api.cpp
+      - path: api/verhoeff_checksum_api.cpp
       - path: backbone_router/backbone_tmf.cpp
       - path: backbone_router/bbr_leader.cpp
       - path: backbone_router/bbr_local.cpp
@@ -92,6 +95,7 @@ source:
       - path: common/log.cpp
       - path: common/message.cpp
       - path: common/notifier.cpp
+      - path: common/offset_range.cpp
       - path: common/preference.cpp
       - path: common/random.cpp
       - path: common/settings.cpp
@@ -119,19 +123,19 @@ source:
       - path: mac/mac.cpp
       - path: mac/mac_filter.cpp
       - path: mac/mac_frame.cpp
+      - path: mac/mac_header_ie.cpp
       - path: mac/mac_links.cpp
       - path: mac/mac_types.cpp
       - path: mac/sub_mac.cpp
       - path: mac/sub_mac_callbacks.cpp
+      - path: mac/sub_mac_csl_receiver.cpp
       - path: meshcop/announce_begin_client.cpp
       - path: meshcop/border_agent.cpp
       - path: meshcop/commissioner.cpp
       - path: meshcop/dataset.cpp
-      - path: meshcop/dataset_local.cpp
       - path: meshcop/dataset_manager.cpp
       - path: meshcop/dataset_manager_ftd.cpp
       - path: meshcop/dataset_updater.cpp
-      - path: meshcop/dtls.cpp
       - path: meshcop/energy_scan_client.cpp
       - path: meshcop/extended_panid.cpp
       - path: meshcop/joiner.cpp
@@ -141,6 +145,8 @@ source:
       - path: meshcop/meshcop_tlvs.cpp
       - path: meshcop/network_name.cpp
       - path: meshcop/panid_query_client.cpp
+      - path: meshcop/secure_transport.cpp
+      - path: meshcop/tcat_agent.cpp
       - path: meshcop/timestamp.cpp
       - path: net/checksum.cpp
       - path: net/dhcp6_client.cpp
@@ -149,6 +155,7 @@ source:
       - path: net/dns_dso.cpp
       - path: net/dns_platform.cpp
       - path: net/dns_types.cpp
+      - path: net/dnssd.cpp
       - path: net/dnssd_server.cpp
       - path: net/icmp6.cpp
       - path: net/ip4_types.cpp
@@ -157,17 +164,20 @@ source:
       - path: net/ip6_filter.cpp
       - path: net/ip6_headers.cpp
       - path: net/ip6_mpl.cpp
+      - path: net/mdns.cpp
       - path: net/nat64_translator.cpp
       - path: net/nd6.cpp
       - path: net/nd_agent.cpp
       - path: net/netif.cpp
       - path: net/sntp_client.cpp
       - path: net/socket.cpp
+      - path: net/srp_advertising_proxy.cpp
       - path: net/srp_client.cpp
       - path: net/srp_server.cpp
       - path: net/tcp6.cpp
       - path: net/tcp6_ext.cpp
       - path: net/udp6.cpp
+      - path: radio/ble_secure.cpp
       - path: radio/radio.cpp
       - path: radio/radio_callbacks.cpp
       - path: radio/radio_platform.cpp
@@ -235,6 +245,7 @@ source:
       - path: utils/power_calibration.cpp
       - path: utils/slaac_address.cpp
       - path: utils/srp_client_buffers.cpp
+      - path: utils/verhoeff_checksum.cpp
 template_contribution:
   - name: component_catalog
     value: openthread_stack

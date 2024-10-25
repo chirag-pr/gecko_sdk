@@ -73,16 +73,12 @@ ENV OTBR_DOCKER_DEPS git ca-certificates
 
 # Required and installed during build (script/bootstrap), could be removed
 ENV OTBR_BUILD_DEPS apt-utils build-essential psmisc ninja-build cmake wget ca-certificates \
-  libreadline-dev libncurses-dev libcpputest-dev libdbus-1-dev libavahi-common-dev \
+  libreadline-dev libncurses-dev libdbus-1-dev libavahi-common-dev \
   libavahi-client-dev libboost-dev libboost-filesystem-dev libboost-system-dev \
   libnetfilter-queue-dev
 
 # Required for OpenThread Backbone CI
-ENV OTBR_OT_BACKBONE_CI_DEPS curl lcov wget build-essential python3-dbus python3-zeroconf
-
-# Required and installed during build (script/bootstrap) when RELEASE=1, could be removed
-ENV OTBR_NORELEASE_DEPS \
-  cpputest-dev
+ENV OTBR_OT_BACKBONE_CI_DEPS curl lcov wget build-essential python3-dbus python3-zeroconf socat
 
 RUN apt-get update \
   && apt-get install --no-install-recommends -y $OTBR_DOCKER_REQS $OTBR_DOCKER_DEPS \
@@ -91,21 +87,27 @@ RUN apt-get update \
 
 # Note: COPY actions use the folder where we run Docker build command
 #       RUN actions happen inside the Docker context (WORKDIR)
-# For SiLabs Docker builds, we run Docker build command from <gsdk>/util/third_party/
-# so we have access to both ot-br-posix and openthread repos
+# For SiLabs Docker builds, we run Docker build command from <gsdk>
+# so we have access to protocol/openthread and ot-br-posix and openthread repos
 
 # Copy OTBR scripts
-COPY ./ot-br-posix/script /app/script
-COPY ./ot-br-posix/third_party/mDNSResponder /app/third_party/mDNSResponder
+COPY --link ./util/third_party/ot-br-posix/script /app/script
+COPY --link ./util/third_party/ot-br-posix/third_party/mDNSResponder /app/third_party/mDNSResponder
+COPY --link ./protocol/openthread/include /app/silabs/openthread/include
+COPY --link ./protocol/openthread/platform-abstraction/include /app/silabs/openthread/platform-abstraction/include
+COPY --link ./protocol/openthread/platform-abstraction/posix /app/silabs/openthread/platform-abstraction/posix
+COPY --link ./protocol/openthread/src/cli /app/silabs/openthread/src/cli
+COPY --link ./protocol/openthread/src/core /app/silabs/openthread/src/core
+COPY --link ./protocol/openthread/src/util /app/silabs/openthread/src/util
 WORKDIR /app
 
 # Run OTBR bootstrap
 RUN ./script/bootstrap
 
 # Stage OTBR folder, and replace copy of OTBR openthread with our GSDK openthread
-COPY ./ot-br-posix/ .
+COPY --link ./util/third_party/ot-br-posix/ .
 RUN rm -rf ./third_party/openthread/repo/
-COPY ./openthread/ ./third_party/openthread/repo/
+COPY --link ./util/third_party/openthread/ ./third_party/openthread/repo/
 
 # OTBR setup
 RUN ./script/setup
@@ -120,7 +122,6 @@ RUN ([ "${DNS64}" = "0" ] || chmod 644 /etc/bind/named.conf.options) \
     && mv /tmp/etc . \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false $OTBR_DOCKER_DEPS \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false $OTBR_BUILD_DEPS  \
-    && ([ "${RELEASE}" = 1 ] ||  apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false "$OTBR_NORELEASE_DEPS";) \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /tmp/* \
   ))

@@ -502,7 +502,7 @@ appFileSystemInit(void)
      * We end up here on the first boot after initializing the flash file system
      */
 
-    zpal_radio_region_t mfgRegionConfig;
+    zpal_radio_region_t mfgRegionConfig = REGION_UNDEFINED;
     // Check for a valid RF Region value in the manufacturing user data configuration
     ZW_GetMfgTokenDataCountryFreq(&mfgRegionConfig);
     if ( (mfgRegionConfig <= REGION_US_LR) || (mfgRegionConfig == REGION_JP) || (mfgRegionConfig == REGION_KR) )
@@ -903,7 +903,10 @@ ApplicationInitSW(void)
       compl_workbuf[6 + i] = apCCLists[0]->pCommandClasses[i];
     }
   }
-  eSerialAPIStartedCapabilities capabilities = (RadioConfig->eRegion == REGION_US_LR) ? SERIAL_API_STARTED_CAPABILITIES_L0NG_RANGE : 0;
+
+  eSerialAPIStartedCapabilities capabilities = 0;
+  if (ZAF_isLongRangeRegion(RadioConfig->eRegion))
+      capabilities = SERIAL_API_STARTED_CAPABILITIES_L0NG_RANGE;
   compl_workbuf[6 + i] = capabilities;
 
   uint32_t zpal_reset_info = 0;
@@ -1259,14 +1262,16 @@ ApplicationNodeUpdate(
   }
 
   /*  - Buffer boundary check */
-  if (bLen > (uint8_t)(BUF_SIZE_TX - (offset + 3)))
-  {
-    bLen = (uint8_t)(BUF_SIZE_TX - (offset + 3));
-  }
+  bLen = (bLen > MAX_NODE_INFO_LENGTH) ? MAX_NODE_INFO_LENGTH : bLen;
+  bLen = (bLen > (uint8_t)(BUF_SIZE_TX - (offset + 3))) ? (uint8_t)(BUF_SIZE_TX - (offset + 3)) : bLen;
+
   BYTE_IN_AR(compl_workbuf, offset + 2) = bLen;
-  for (uint8_t i = 0; i < bLen; i++)
+  if(bLen > 0 && pCmd)
   {
-    BYTE_IN_AR(compl_workbuf, offset + 3 + i) = *(pCmd + i);
+    for (uint8_t i = 0; i < bLen; i++)
+    {
+      BYTE_IN_AR(compl_workbuf, offset + 3 + i) = *(pCmd + i);
+    }
   }
   RequestUnsolicited(FUNC_ID_ZW_APPLICATION_UPDATE, compl_workbuf, (uint8_t)(offset + bLen + 3));
 }

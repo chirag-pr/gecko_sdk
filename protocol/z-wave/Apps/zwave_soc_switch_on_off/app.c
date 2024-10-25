@@ -57,7 +57,7 @@ ApplicationInit(__attribute__((unused)) EResetReason_t eResetReason)
   RadioConfig = zaf_get_radio_config();
 
   // Read Rf region from MFG_ZWAVE_COUNTRY_FREQ
-  zpal_radio_region_t regionMfg;
+  zpal_radio_region_t regionMfg = REGION_UNDEFINED;
   ZW_GetMfgTokenDataCountryFreq((void*) &regionMfg);
   if (isRfRegionValid(regionMfg)) {
     RadioConfig->eRegion = regionMfg;

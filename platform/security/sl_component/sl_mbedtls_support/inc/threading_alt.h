@@ -99,6 +99,19 @@ typedef struct mbedtls_threading_mutex {
 } mbedtls_threading_mutex_t;
 
 /**
+ * \brief          Set mutex recursive
+ *
+ * \param mutex    Pointer to the mutex
+ */
+static inline void THREADING_SetRecursive(mbedtls_threading_mutex_t *mutex)
+{
+  if (mutex == NULL) {
+    return;
+  }
+  mutex->mutex_attr.attr_bits |= osMutexRecursive;
+}
+
+/**
  * \brief          Initialize a given mutex
  *
  * \param mutex    Pointer to the mutex needing initialization

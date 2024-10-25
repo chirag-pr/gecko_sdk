@@ -36,7 +36,6 @@
 #include "test-harness-z3-mac.h"
 #include "address-table.h"
 #include "core/ember-multi-network.h"
-#include "framework/packet-header.h"
 
 #ifdef SL_CATALOG_ZIGBEE_END_DEVICE_SUPPORT_PRESENT
 #include "app/framework/plugin/end-device-support/end-device-support.h"
@@ -63,7 +62,7 @@
 #define emZigbeeSource(frame) \
   emberFetchLowHighInt16u((frame) + ZIGBEE_SOURCE_ADDRESS_INDEX)
 #define emHeaderRoutingFrame(header) \
-  (sli_zigbee_packet_header_contents(header))
+  (sl_mac_payload_pointer(header))
 
 EmberMessageBuffer emTempHandoffHeader;
 // -----------------------------------------------------------------------------
@@ -689,8 +688,9 @@ void sli_zigbee_af_test_harness_z3_legacy_profile_command(SL_CLI_COMMAND_ARG)
 void sli_zigbee_af_test_harness_set_network_creator_pan_id(SL_CLI_COMMAND_ARG)
 {
   EmberPanId panId = sl_cli_get_argument_uint16(arguments, 0);
+#ifdef SL_CATALOG_ZIGBEE_ZLL_COMMISSIONING_CLIENT_PRESENT
   sli_zigbee_af_zll_set_pan_id(panId);
-
+#endif
   emberAfCorePrintln("Network Creator PAN ID = 0x%2X", panId);
 }
 

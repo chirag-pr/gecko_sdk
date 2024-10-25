@@ -64,7 +64,12 @@ typedef struct
 } tx_frame_t;
 
 
-static comm_interface_t comm_interface = { 0 };
+static comm_interface_t comm_interface = {
+  .transport.type = TRANSPORT_TYPE_UART,
+  .state = COMM_INTERFACE_STATE_SOF,
+  .buffer_len = 0,
+};
+
 comm_interface_frame_ptr const serial_frame = (comm_interface_frame_ptr)comm_interface.buffer;
 
 static uint8_t tx_data[COMM_INT_TX_BUFFER_SIZE];
@@ -223,7 +228,6 @@ void comm_interface_init(void)
   ASSERT(status == ZPAL_STATUS_OK);
   status = zpal_uart_enable(comm_interface.transport.handle);
   ASSERT(status == ZPAL_STATUS_OK);
-  comm_interface.transport.type = TRANSPORT_TYPE_UART;
 
   AppTimerRegister(&comm_interface.ack_timer, false, ack_timer_cb);
   TimerStop(&comm_interface.ack_timer);
@@ -234,8 +238,6 @@ void comm_interface_init(void)
   AppTimerRegister(&comm_interface.buffer_check_timer, true, buffer_check_timer_cb);
   TimerStop(&comm_interface.buffer_check_timer);
 
-  comm_interface.state = COMM_INTERFACE_STATE_SOF;
-  comm_interface.buffer_len = 0;
   set_expect_bytes(HEADER_LEN);
 }
 
@@ -419,7 +421,7 @@ static void handle_default(void)
 
 comm_interface_parse_result_t comm_interface_parse_data(bool ack)
 {
-  uint8_t rx_byte;
+  uint8_t rx_byte = 0;
   comm_interface_parse_result_t result = PARSE_IDLE;
 
   while ((result == PARSE_IDLE) && zpal_uart_get_available(comm_interface.transport.handle))

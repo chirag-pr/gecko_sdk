@@ -3,6 +3,11 @@
 The changes described in this file will possibly break the build and/or functionality of an
 existing application. The description serves the purpose of helping to fix the failing build.
 
+# 7.21.5 {#section-7-21-5}
+## RF Configuration in Apps
+prior to this release, RF configuration was stored in two different files, depending on whether or not the chip supported the  20dBm TX level. These files have now been merged. The range for APP_MAX_TX_POWER_LR & APP_MAX_TX_POWER values now has a high value of 200 for all chips. It needs to be increased to allow 20dBm transmission on supported chips.
+
+
 # 7.21.4 {#section-7-21-4}
 
 ## MAX Number of LR Nodes

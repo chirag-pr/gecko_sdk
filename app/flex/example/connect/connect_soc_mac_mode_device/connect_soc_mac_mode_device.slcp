@@ -88,6 +88,12 @@ configuration:
     value: "8192"
   - name: "SL_HEAP_SIZE"
     value: "10240"
+    unless:
+      - "device_sdid_220"
+  - name: "SL_HEAP_SIZE"
+    value: "16384"
+    condition:
+      - "device_sdid_220"
 
 define:
   - name: SL_CONNECT_DISABLE_WATCHDOG
@@ -102,7 +108,7 @@ template_contribution:
       argument:
       - type: uint8
         help: "Selected channel"
-  
+
   - name: cli_command
     value:
       name: commission

@@ -123,7 +123,7 @@ void sli_its_acquire_mutex(void)
     if (!its_mutex_inited) {
       // The ITS mutex needs to be recursive since the same thread may need
       // to acquire it more than one time.
-      its_mutex.mutex_attr.attr_bits |= osMutexRecursive;
+      THREADING_SetRecursive(&its_mutex);
       mbedtls_mutex_init(&its_mutex);
       its_mutex_inited = true;
     }

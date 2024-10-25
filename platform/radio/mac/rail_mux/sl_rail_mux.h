@@ -432,6 +432,37 @@ sl_status_t sli_rail_mux_unlock_radio (RAIL_Handle_t railHandle);
 RAIL_Status_t sl_rail_mux_GetChannel(RAIL_Handle_t railHandle, uint16_t *channel);
 uint16_t sl_rail_mux_GetTxPacketsRemaining(RAIL_Handle_t railHandle);
 void sl_rail_mux_ResetFifo(RAIL_Handle_t railHandle, bool txFifo, bool rxFifo);
+RAIL_Status_t sl_rail_mux_ConfigRxDutyCycle(RAIL_Handle_t railHandle,
+                                            const RAIL_RxDutyCycleConfig_t *config);
+RAIL_Status_t sl_rail_mux_EnableRxDutyCycle(RAIL_Handle_t railHandle,
+                                            bool enable);
+uint16_t sl_rail_mux_GetTxFifoSpaceAvailable(RAIL_Handle_t railHandle);
+RAIL_Status_t sl_rail_mux_IEEE802154_AcceptFrames(RAIL_Handle_t railHandle,
+                                                  uint8_t framesMask);
+RAIL_Status_t sl_rail_mux_IEEE802154_Config2p4GHzRadioAntDivCoex(RAIL_Handle_t railHandle);
+RAIL_Status_t sl_rail_mux_IEEE802154_Config2p4GHzRadioAntDivCoexFem(RAIL_Handle_t railHandle);
+RAIL_Status_t sl_rail_mux_IEEE802154_Config2p4GHzRadioAntDivFem(RAIL_Handle_t railHandle);
+RAIL_Status_t sl_rail_mux_IEEE802154_Config2p4GHzRadioCoex(RAIL_Handle_t railHandle);
+RAIL_Status_t sl_rail_mux_IEEE802154_Config2p4GHzRadioCoexFem(RAIL_Handle_t railHandle);
+RAIL_Status_t sl_rail_mux_IEEE802154_Config2p4GHzRadioFem(RAIL_Handle_t railHandle);
+RAIL_Status_t sl_rail_mux_IEEE802154_ConfigCcaMode(RAIL_Handle_t railHandle,
+                                                   RAIL_IEEE802154_CcaMode_t ccaMode);
+RAIL_Status_t sl_rail_mux_IEEE802154_ConfigEOptions(RAIL_Handle_t railHandle,
+                                                    RAIL_IEEE802154_EOptions_t mask,
+                                                    RAIL_IEEE802154_EOptions_t options);
+RAIL_Status_t sl_rail_mux_IEEE802154_ConfigGOptions(RAIL_Handle_t railHandle,
+                                                    RAIL_IEEE802154_GOptions_t mask,
+                                                    RAIL_IEEE802154_GOptions_t options);
+RAIL_Status_t sl_rail_mux_IEEE802154_SetPtiRadioConfig(RAIL_Handle_t railHandle,
+                                                       RAIL_IEEE802154_PtiRadioConfig_t ptiRadioConfigId);
+RAIL_Status_t sl_rail_mux_SetRssiOffset(RAIL_Handle_t railHandle, int8_t rssiOffset);
+RAIL_Status_t sl_rail_mux_StartTxStreamAlt(RAIL_Handle_t railHandle,
+                                           uint16_t channel,
+                                           RAIL_StreamMode_t mode,
+                                           RAIL_TxOptions_t options);
+RAIL_Status_t sl_rail_mux_GetRxTimeFrameEnd(RAIL_Handle_t railHandle,
+                                            uint16_t totalPacketBytes,
+                                            RAIL_Time_t *pPacketTime);
 //------------------------------------------------------------------------------
 // Internals
 

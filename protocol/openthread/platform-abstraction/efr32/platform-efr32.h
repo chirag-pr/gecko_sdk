@@ -46,6 +46,8 @@ extern "C" {
 
 #include "rail.h"
 
+#include "alarm.h"
+
 // Global OpenThread instance structure
 extern otInstance *sInstance;
 
@@ -66,34 +68,6 @@ extern RAIL_Handle_t gRailHandle; // coex needs the emPhyRailHandle symbol.
  *
  */
 void sl_ot_sys_init(void);
-
-/**
- * This function initializes the alarm service used by OpenThread.
- *
- */
-void efr32AlarmInit(void);
-
-/**
- * This function provides the remaining time (in milliseconds) on an alarm service.
- *
- */
-uint64_t efr32AlarmPendingTime(void);
-
-/**
- * This function checks if the alarm service is running.
- *
- * @param[in]  aInstance  The OpenThread instance structure.
- *
- */
-bool efr32AlarmIsRunning(otInstance *aInstance);
-
-/**
- * This function performs alarm driver processing.
- *
- * @param[in]  aInstance  The OpenThread instance structure.
- *
- */
-void efr32AlarmProcess(otInstance *aInstance);
 
 /**
  * This function initializes the radio service used by OpenThead.

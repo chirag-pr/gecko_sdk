@@ -46,7 +46,8 @@ zafi_nvm_app_reset(void)
 void
 zafi_nvm_app_load_configuration(void)
 {
-  uint32_t saved_version, current_version;
+  uint32_t saved_version = 0;
+  uint32_t current_version = 0;
   zpal_status_t status;
 
   status = ZAF_nvm_read(ZAF_FILE_ID_APP_VERSION, &saved_version, ZAF_FILE_SIZE_APP_VERSION);

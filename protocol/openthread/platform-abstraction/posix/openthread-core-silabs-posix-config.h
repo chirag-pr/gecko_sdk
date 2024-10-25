@@ -37,9 +37,50 @@
 #ifndef OPENTHREAD_CORE_SILABS_POSIX_CONFIG_H_
 #define OPENTHREAD_CORE_SILABS_POSIX_CONFIG_H_
 
+/* clang-format off */
 /******************************************************************************
  * Recommended setup strings for Thread certified Silicon Labs OTBRs
  *****************************************************************************/
+
+/****************************
+ * 1.4 certified OTBR
+ ****************************/
+
+/*
+sudo RELEASE=1 REFERENCE_DEVICE=1 BACKBONE_ROUTER=1 NAT64=1 DNS64=1 \
+     ./script/bootstrap
+
+sudo INFRA_IF_NAME=eth0 \
+     RELEASE=1 REFERENCE_DEVICE=1 BACKBONE_ROUTER=1 BORDER_ROUTING=1 NAT64=1 DNS64=1 \
+     OTBR_OPTIONS="-DOT_THREAD_VERSION=1.4 \
+                   -DOT_PLATFORM_CONFIG=openthread-core-silabs-posix-config.h \
+                   -DOTBR_DUA_ROUTING=ON -DOTBR_DNSSD_DISCOVERY_PROXY=ON -DOTBR_SRP_ADVERTISING_PROXY=ON \
+                   -DOTBR_TREL=ON -DOTBR_DHCP6_PD=ON" \
+     ./script/setup
+*/
+
+/****************************
+ * 1.4 certified CPC OTBR
+ ****************************/
+
+/*
+sudo RELEASE=1 REFERENCE_DEVICE=1 BACKBONE_ROUTER=1 NAT64=1 DNS64=1 \
+     ./script/bootstrap
+
+sudo INFRA_IF_NAME=eth0 \
+     RELEASE=1 REFERENCE_DEVICE=1 BACKBONE_ROUTER=1 BORDER_ROUTING=1 NAT64=1 DNS64=1 \
+     OTBR_OPTIONS="-DOT_THREAD_VERSION=1.4 \
+                   -DOT_MULTIPAN_RCP=ON \
+                   -DCPCD_SOURCE_DIR=$GSDK_DIR/platform/service/cpc/daemon \
+                   -DOT_POSIX_RCP_VENDOR_BUS=ON \
+                   -DOT_POSIX_CONFIG_RCP_VENDOR_DEPS_PACKAGE=$GSDK_DIR/protocol/openthread/platform-abstraction/posix/posix_vendor_rcp.cmake \
+                   -DOT_POSIX_CONFIG_RCP_VENDOR_INTERFACE=$GSDK_DIR/protocol/openthread/platform-abstraction/posix/cpc_interface.cpp \
+                   -DOT_CLI_VENDOR_EXTENSION=$GSDK_DIR/protocol/openthread/platform-abstraction/posix/posix_vendor_cli.cmake \
+                   -DOT_PLATFORM_CONFIG=openthread-core-silabs-posix-config.h \
+                   -DOTBR_DUA_ROUTING=ON -DOTBR_DNSSD_DISCOVERY_PROXY=ON -DOTBR_SRP_ADVERTISING_PROXY=ON \
+                   -DOTBR_TREL=ON -DOTBR_DHCP6_PD=ON" \
+     ./script/setup
+*/
 
 /****************************
  * 1.3 certified OTBR
@@ -53,7 +94,8 @@ sudo INFRA_IF_NAME=eth0 \
      RELEASE=1 REFERENCE_DEVICE=1 BACKBONE_ROUTER=1 BORDER_ROUTING=1 NAT64=1 DNS64=1 \
      OTBR_OPTIONS="-DOT_THREAD_VERSION=1.3 \
                    -DOT_PLATFORM_CONFIG=openthread-core-silabs-posix-config.h \
-                   -DOTBR_DUA_ROUTING=ON -DOTBR_DNSSD_DISCOVERY_PROXY=ON -DOTBR_SRP_ADVERTISING_PROXY=ON" \
+                   -DOTBR_DUA_ROUTING=ON -DOTBR_DNSSD_DISCOVERY_PROXY=ON -DOTBR_SRP_ADVERTISING_PROXY=ON \
+                   -DOTBR_TREL=ON -DOTBR_DHCP6_PD=ON" \
      ./script/setup
 */
 
@@ -75,7 +117,8 @@ sudo INFRA_IF_NAME=eth0 \
                    -DOT_POSIX_CONFIG_RCP_VENDOR_INTERFACE=$GSDK_DIR/protocol/openthread/platform-abstraction/posix/cpc_interface.cpp \
                    -DOT_CLI_VENDOR_EXTENSION=$GSDK_DIR/protocol/openthread/platform-abstraction/posix/posix_vendor_cli.cmake \
                    -DOT_PLATFORM_CONFIG=openthread-core-silabs-posix-config.h \
-                   -DOTBR_DUA_ROUTING=ON -DOTBR_DNSSD_DISCOVERY_PROXY=ON -DOTBR_SRP_ADVERTISING_PROXY=ON" \
+                   -DOTBR_DUA_ROUTING=ON -DOTBR_DNSSD_DISCOVERY_PROXY=ON -DOTBR_SRP_ADVERTISING_PROXY=ON \
+                   -DOTBR_TREL=ON -DOTBR_DHCP6_PD=ON" \
      ./script/setup
 */
 
@@ -115,6 +158,7 @@ sudo INFRA_IF_NAME=eth0 RELEASE=1 REFERENCE_DEVICE=1 BACKBONE_ROUTER=1 BORDER_RO
         ./script/setup
 */
 
+/* clang-format on */
 /******************************************************************************
  * Vendor defaults
  *****************************************************************************/
@@ -144,24 +188,11 @@ sudo INFRA_IF_NAME=eth0 RELEASE=1 REFERENCE_DEVICE=1 BACKBONE_ROUTER=1 BORDER_RO
     "    cpc-bus-speed[=speed]         CPC bus speed used for communicating with RCP.\n"
 
 /******************************************************************************
- * CLI Interpreter defaults
- *****************************************************************************/
-
-/**
- * Default to 2 to allow adding cli user commands in addition to posix commands
- */
-
-#ifndef OPENTHREAD_CONFIG_CLI_MAX_USER_CMD_ENTRIES
-#define OPENTHREAD_CONFIG_CLI_MAX_USER_CMD_ENTRIES 2
-#endif
-
-/******************************************************************************
  * Stack / MAC defaults for OTBR
  *****************************************************************************/
 
-#ifndef OPENTHREAD_CONFIG_THREAD_VERSION
-#define OPENTHREAD_CONFIG_THREAD_VERSION OT_THREAD_VERSION_1_3
-#endif
+#undef OPENTHREAD_CONFIG_THREAD_VERSION
+#define OPENTHREAD_CONFIG_THREAD_VERSION OT_THREAD_VERSION_1_4
 
 /**
  * OPENTHREAD_CONFIG_DUA_ENABLE
@@ -188,7 +219,7 @@ sudo INFRA_IF_NAME=eth0 RELEASE=1 REFERENCE_DEVICE=1 BACKBONE_ROUTER=1 BORDER_RO
  *
  */
 #undef OPENTHREAD_CONFIG_BORDER_ROUTING_ENABLE
-#define OPENTHREAD_CONFIG_BORDER_ROUTING_ENABLE (OPENTHREAD_CONFIG_THREAD_VERSION == OT_THREAD_VERSION_1_3)
+#define OPENTHREAD_CONFIG_BORDER_ROUTING_ENABLE (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_3)
 
 /**
  * OPENTHREAD_CONFIG_DHCP6_CLIENT_ENABLE
@@ -197,7 +228,7 @@ sudo INFRA_IF_NAME=eth0 RELEASE=1 REFERENCE_DEVICE=1 BACKBONE_ROUTER=1 BORDER_RO
  *
  */
 #undef OPENTHREAD_CONFIG_DHCP6_CLIENT_ENABLE
-#define OPENTHREAD_CONFIG_DHCP6_CLIENT_ENABLE (OPENTHREAD_CONFIG_THREAD_VERSION == OT_THREAD_VERSION_1_3)
+#define OPENTHREAD_CONFIG_DHCP6_CLIENT_ENABLE (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_3)
 
 /**
  * OPENTHREAD_CONFIG_DHCP6_SERVER_ENABLE
@@ -206,7 +237,7 @@ sudo INFRA_IF_NAME=eth0 RELEASE=1 REFERENCE_DEVICE=1 BACKBONE_ROUTER=1 BORDER_RO
  *
  */
 #undef OPENTHREAD_CONFIG_DHCP6_SERVER_ENABLE
-#define OPENTHREAD_CONFIG_DHCP6_SERVER_ENABLE (OPENTHREAD_CONFIG_THREAD_VERSION == OT_THREAD_VERSION_1_3)
+#define OPENTHREAD_CONFIG_DHCP6_SERVER_ENABLE (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_3)
 
 /**
  * OPENTHREAD_CONFIG_SRP_CLIENT_ENABLE
@@ -215,7 +246,7 @@ sudo INFRA_IF_NAME=eth0 RELEASE=1 REFERENCE_DEVICE=1 BACKBONE_ROUTER=1 BORDER_RO
  *
  */
 #undef OPENTHREAD_CONFIG_SRP_CLIENT_ENABLE
-#define OPENTHREAD_CONFIG_SRP_CLIENT_ENABLE (OPENTHREAD_CONFIG_THREAD_VERSION == OT_THREAD_VERSION_1_3)
+#define OPENTHREAD_CONFIG_SRP_CLIENT_ENABLE (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_3)
 
 /**
  * OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE
@@ -224,7 +255,35 @@ sudo INFRA_IF_NAME=eth0 RELEASE=1 REFERENCE_DEVICE=1 BACKBONE_ROUTER=1 BORDER_RO
  *
  */
 #undef OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE
-#define OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE (OPENTHREAD_CONFIG_THREAD_VERSION == OT_THREAD_VERSION_1_3)
+#define OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_3)
+
+/**
+ * OPENTHREAD_CONFIG_TCP_ENABLE
+ *
+ * Set to 1 to enable TCP.
+ *
+ */
+#undef OPENTHREAD_CONFIG_TCP_ENABLE
+#define OPENTHREAD_CONFIG_TCP_ENABLE (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_3)
+
+/**
+ * OPENTHREAD_CONFIG_DNS_CLIENT_OVER_TCP_ENABLE
+ *
+ * Set to 1 to enable support for sending DNS Queries over TCP.
+ *
+ */
+#undef OPENTHREAD_CONFIG_DNS_CLIENT_OVER_TCP_ENABLE
+#define OPENTHREAD_CONFIG_DNS_CLIENT_OVER_TCP_ENABLE (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_3)
+
+/**
+ * @def OPENTHREAD_CONFIG_NET_DIAG_VENDOR_INFO_SET_API_ENABLE
+ *
+ * Set to 1 to add APIs to allow Vendor Name, Model, SW Version to change at run-time.
+ *
+ */
+#undef OPENTHREAD_CONFIG_NET_DIAG_VENDOR_INFO_SET_API_ENABLE
+#define OPENTHREAD_CONFIG_NET_DIAG_VENDOR_INFO_SET_API_ENABLE \
+    (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_3)
 
 /**
  * OPENTHREAD_CONFIG_MLE_MAX_CHILDREN
@@ -329,8 +388,8 @@ sudo INFRA_IF_NAME=eth0 RELEASE=1 REFERENCE_DEVICE=1 BACKBONE_ROUTER=1 BORDER_RO
 #ifndef OPENTHREAD_CONFIG_RADIO_915MHZ_OQPSK_SUPPORT
 #ifndef OPENTHREAD_CONFIG_RADIO_2P4GHZ_OQPSK_SUPPORT
 #define OPENTHREAD_CONFIG_PLATFORM_RADIO_PROPRIETARY_SUPPORT 0
-#define OPENTHREAD_CONFIG_RADIO_915MHZ_OQPSK_SUPPORT         0
-#define OPENTHREAD_CONFIG_RADIO_2P4GHZ_OQPSK_SUPPORT         1
+#define OPENTHREAD_CONFIG_RADIO_915MHZ_OQPSK_SUPPORT 0
+#define OPENTHREAD_CONFIG_RADIO_2P4GHZ_OQPSK_SUPPORT 1
 #endif
 #endif
 #endif

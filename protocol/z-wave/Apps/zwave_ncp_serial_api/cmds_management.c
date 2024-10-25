@@ -177,7 +177,8 @@ void func_id_serial_api_setup(uint8_t inputLength,
   uint8_t i=0;
   uint8_t cmdRes;
   zpal_radio_region_t rfRegion;
-  zpal_tx_power_t iPowerLevel, iPower0dbmMeasured;
+  zpal_tx_power_t iPowerLevel = 0;
+  zpal_tx_power_t iPower0dbmMeasured = 0;
 
   /* We assume operation is nonesuccessful */
   cmdRes = false;
@@ -325,7 +326,8 @@ void func_id_serial_api_setup(uint8_t inputLength,
 
   case SERIAL_API_SETUP_CMD_TX_POWERLEVEL_SET:
   {
-    zpal_tx_power_t iTxPower, iAdjust;
+    zpal_tx_power_t iTxPower;
+    zpal_tx_power_t iAdjust;
     /**
      *  HOST->ZW: SERIAL_API_SETUP_CMD_TX_POWER_SET | NormalTxPowerLevel | Measured0dBmPower
      *  ZW->HOST: SERIAL_API_SETUP_CMD_TX_POWER_SET | cmdRes
@@ -378,7 +380,8 @@ void func_id_serial_api_setup(uint8_t inputLength,
 
   case SERIAL_API_SETUP_CMD_TX_POWERLEVEL_SET_16_BIT:
   {
-    zpal_tx_power_t iTxPower, iAdjust;
+    zpal_tx_power_t iTxPower;
+    zpal_tx_power_t iAdjust;
     zpal_tx_power_t iTxPowerMaxSupported;
     /**
      *  HOST->ZW: SERIAL_API_SETUP_CMD_TX_POWER_SET | NormalTxPowerLevel (MSB) |NormalTxPowerLevel (LSB) | Measured0dBmPower (MSB)| Measured0dBmPower (LSB)
@@ -477,7 +480,7 @@ void func_id_serial_api_setup(uint8_t inputLength,
      *  ZW->HOST: SERIAL_API_SETUP_CMD_MAX_LR_TX_PWR_GET | maxtxpower (16-bit)
      */
     {
-      int16_t readout;
+      int16_t readout = 0;
       ReadApplicationMaxLRTxPwr(&readout);
       BYTE_IN_AR(pOutputBuffer, i++) = (uint8_t)((readout >> 8) & 0xFF);
       BYTE_IN_AR(pOutputBuffer, i++) = (uint8_t)(readout & 0xFF);
@@ -575,8 +578,8 @@ bool InitiateShutdown( ZW_Void_Callback_t pCallback)
   if (EQUEUENOTIFYING_STATUS_SUCCESS == QueueNotifyingSendToBack(pAppHandles->pZwCommandQueue, (uint8_t *)&shutdown, 0))
   {
     // Wait for protocol to handle command
-    SZwaveCommandStatusPackage result = { 0 };
-    if (GetCommandResponse(&result, EZWAVECOMMANDSTATUS_ZW_INITIATE_SHUTDOWN))
+    SZwaveCommandStatusPackage result = { .eStatusType = EZWAVECOMMANDSTATUS_ZW_INITIATE_SHUTDOWN };
+    if (GetCommandResponse(&result, result.eStatusType))
     {
       return result.Content.InitiateShutdownStatus.result;
     }

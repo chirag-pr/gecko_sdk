@@ -33,12 +33,7 @@
 
 #include "openthread-core-config.h"
 
-#include <openthread/link.h>
-
-#include "common/as_core_type.hpp"
-#include "common/locator_getters.hpp"
-#include "mac/mac.hpp"
-#include "radio/radio.hpp"
+#include "instance/instance.hpp"
 
 using namespace ot;
 
@@ -83,6 +78,29 @@ otError otLinkSetChannel(otInstance *aInstance, uint8_t aChannel)
 exit:
     return error;
 }
+
+#if OPENTHREAD_CONFIG_WAKEUP_COORDINATOR_ENABLE || OPENTHREAD_CONFIG_WAKEUP_END_DEVICE_ENABLE
+uint8_t otLinkGetWakeupChannel(otInstance *aInstance)
+{
+    return AsCoreType(aInstance).Get<Mac::Mac>().GetWakeupChannel();
+}
+
+otError otLinkSetWakeupChannel(otInstance *aInstance, uint8_t aChannel)
+{
+    Error     error    = kErrorNone;
+    Instance &instance = AsCoreType(aInstance);
+
+    VerifyOrExit(instance.Get<Mle::MleRouter>().IsDisabled(), error = kErrorInvalidState);
+
+    SuccessOrExit(error = instance.Get<Mac::Mac>().SetWakeupChannel(aChannel));
+
+    instance.Get<MeshCoP::ActiveDatasetManager>().Clear();
+    instance.Get<MeshCoP::PendingDatasetManager>().Clear();
+
+exit:
+    return error;
+}
+#endif // OPENTHREAD_CONFIG_WAKEUP_COORDINATOR_ENABLE || OPENTHREAD_CONFIG_WAKEUP_END_DEVICE_ENABLE
 
 uint32_t otLinkGetSupportedChannelMask(otInstance *aInstance)
 {
@@ -187,6 +205,11 @@ void otLinkSetMaxFrameRetriesIndirect(otInstance *aInstance, uint8_t aMaxFrameRe
 }
 
 #endif // OPENTHREAD_FTD
+
+uint32_t otLinkGetFrameCounter(otInstance *aInstance)
+{
+    return AsCoreType(aInstance).Get<Mac::SubMac>().GetFrameCounter();
+}
 
 #if OPENTHREAD_CONFIG_MAC_FILTER_ENABLE
 

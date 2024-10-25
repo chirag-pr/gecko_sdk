@@ -22,14 +22,17 @@ include:
       - path: uart_rtt.h
   - path: protocol/openthread/platform-abstraction/efr32
     file_list:
+      - path: alarm.h
       - path: ieee802154mac.h
       - path: ieee802154-packet-utils.hpp
       - path: platform-band.h
       - path: rail_config.h
       - path: sl_packet_utils.h
       - path: sl_openthread.h
+      - path: circular_queue_manager.h
       - path: diag.h
       - path: soft_source_match_table.h
+      - path: sl_multipan.h
   - path: protocol/openthread/platform-abstraction/include
     file_list:
       - path: radio_counters.h
@@ -42,6 +45,7 @@ source:
       - path: util/third_party/openthread/examples/platforms/utils/uart_rtt.c
       - path: protocol/openthread/platform-abstraction/efr32/soft_source_match_table.c
       - path: protocol/openthread/platform-abstraction/efr32/alarm.c
+      - path: protocol/openthread/platform-abstraction/efr32/circular_queue_manager.c
       - path: protocol/openthread/platform-abstraction/efr32/diag.c
       - path: protocol/openthread/platform-abstraction/efr32/entropy.c
       - path: protocol/openthread/platform-abstraction/efr32/flash.c
@@ -59,3 +63,10 @@ define:
         value: 1
         condition:
         - "device_family_efr32mg1"
+template_contribution:
+  - name: power_manager_handler
+    value:
+      event: sleep_on_isr_exit
+      include: alarm.h
+      handler: "efr32AlarmSleepOnISRExit"
+    condition: [power_manager]

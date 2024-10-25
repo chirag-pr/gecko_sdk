@@ -221,8 +221,6 @@ void AppTimerDeepSleepPersistentLoadAll(EResetReason_t resetReason)
 {
   uint32_t tickValueAtPowerDown  = 0;
   uint32_t tickValueAtSaveTimers = 0;
-  zpal_status_t readStatus       = ZPAL_STATUS_FAIL;
-  uint8_t  timerId               = 0;
   uint8_t  valIdx                = 0;
   uint32_t savedTimerValue       = 0;
   uint32_t elapsedMsFromSaveTimerValuesToSleep = 0;
@@ -279,12 +277,11 @@ void AppTimerDeepSleepPersistentLoadAll(EResetReason_t resetReason)
 
   /* Read saved timer values from retention registers into array
    * while looking for smallest value larger than savedBeforePowerdownMs */
-  for (timerId = 0; timerId < MAX_NUM_APP_TIMERS; timerId++)
+  for (uint8_t timerId = 0; timerId < MAX_NUM_APP_TIMERS; timerId++)
   {
     if (true == g_AppTimer.DeepSleepPersistent[timerId])
     {
-      readStatus = zpal_retention_register_read(TIMER_VALUES_BEGIN_RETENTION_REGISTER + valIdx, &savedTimerValue);
-      if (ZPAL_STATUS_OK == readStatus)
+      if (ZPAL_STATUS_OK == zpal_retention_register_read(TIMER_VALUES_BEGIN_RETENTION_REGISTER + valIdx, &savedTimerValue))
       {
         SSwTimer *pTimer = g_AppTimer.aTimerPointerArray[timerId];
 

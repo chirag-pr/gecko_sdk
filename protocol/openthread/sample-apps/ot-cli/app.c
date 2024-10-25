@@ -1,4 +1,4 @@
-/***************************************************************************//**
+/*******************************************************************************
  * @file
  * @brief Core application logic.
  *******************************************************************************
@@ -15,7 +15,7 @@
  *
  ******************************************************************************/
 // Define module name for Power Manager debuging feature.
-#define CURRENT_MODULE_NAME    "OPENTHREAD_SAMPLE_APP"
+#define CURRENT_MODULE_NAME "OPENTHREAD_SAMPLE_APP"
 
 #include <assert.h>
 #include <openthread-core-config.h>
@@ -25,8 +25,8 @@
 #include <openthread/diag.h>
 #include <openthread/tasklet.h>
 
-#include "openthread-system.h"
 #include "app.h"
+#include "openthread-system.h"
 
 #include "reset_util.h"
 
@@ -48,9 +48,9 @@
  */
 extern void otAppCliInit(otInstance *aInstance);
 
-static otInstance *    sInstance       = NULL;
-static bool            sButtonPressed  = false;
-static bool            sStayAwake      = true;
+static otInstance *sInstance      = NULL;
+static bool        sButtonPressed = false;
+static bool        sStayAwake     = true;
 
 otInstance *otGetInstance(void)
 {
@@ -132,7 +132,7 @@ void sl_ot_cli_init(void)
     otAppCliInit(sInstance);
 }
 
-/**************************************************************************//**
+/******************************************************************************
  * Application Init.
  *****************************************************************************/
 
@@ -141,7 +141,7 @@ void app_init(void)
     OT_SETUP_RESET_JUMP(argv);
 }
 
-/**************************************************************************//**
+/******************************************************************************
  * Application Process Action.
  *****************************************************************************/
 void app_process_action(void)
@@ -150,7 +150,7 @@ void app_process_action(void)
     otSysProcessDrivers(sInstance);
 }
 
-/**************************************************************************//**
+/******************************************************************************
  * Application Exit.
  *****************************************************************************/
 void app_exit(void)

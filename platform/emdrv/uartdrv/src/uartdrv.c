@@ -161,7 +161,7 @@
 static bool uartdrvHandleIsInitialized = false;
 static UARTDRV_Handle_t uartdrvHandle[EMDRV_UARTDRV_MAX_DRIVER_INSTANCES];
 #endif
-static bool enableRxWhenSleeping = UARTDRV_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION;
+static const bool enableRxWhenSleeping = UARTDRV_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION;
 
 //****************************************************************************
 
@@ -2235,7 +2235,7 @@ Ecode_t UARTDRV_Abort(UARTDRV_Handle_t handle, UARTDRV_AbortType_t type)
         if (txBuffer->callback != NULL) {
           txBuffer->callback(handle,
                              ECODE_EMDRV_UARTDRV_ABORTED,
-                             NULL,
+                             txBuffer->data,
                              txBuffer->itemsRemaining);
         }
       }
@@ -2244,6 +2244,9 @@ Ecode_t UARTDRV_Abort(UARTDRV_Handle_t handle, UARTDRV_AbortType_t type)
     // Wait for peripheral to finish cleaning up, to prevent framing errors
     // on subsequent transfers
     while (!(UARTDRV_GetPeripheralStatus(handle) & UARTDRV_STATUS_TXIDLE)) {
+    }
+    if (handle->em1RequestCount > 0) {
+      em1RequestRemove(handle);
     }
   }
   if ((type == uartdrvAbortReceive) || (type == uartdrvAbortAll)) {
@@ -2266,7 +2269,7 @@ Ecode_t UARTDRV_Abort(UARTDRV_Handle_t handle, UARTDRV_AbortType_t type)
         if (rxBuffer->callback != NULL) {
           rxBuffer->callback(handle,
                              ECODE_EMDRV_UARTDRV_ABORTED,
-                             NULL,
+                             rxBuffer->data,
                              rxBuffer->itemsRemaining);
         }
       }
@@ -2276,10 +2279,9 @@ Ecode_t UARTDRV_Abort(UARTDRV_Handle_t handle, UARTDRV_AbortType_t type)
     if (handle->fcType != uartdrvFlowControlHwUart) {
       DisableReceiver(handle);
     }
-  }
-
-  if (handle->em1RequestCount > 0) {
-    em1RequestRemove(handle);
+    if (enableRxWhenSleeping && handle->em1RequestCount > 0) {
+      em1RequestRemove(handle);
+    }
   }
 
   CORE_EXIT_ATOMIC();

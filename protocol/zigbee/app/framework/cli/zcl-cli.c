@@ -36,6 +36,11 @@
    ? 255                        \
    : APP_ZCL_BUFFER_SIZE)
 
+// MIN and MAX length validation.
+#if (ATTRIBUTE_LARGEST < 1)
+#error "ATTRIBUTE_LARGEST should be greater than 0"
+#endif
+
 uint8_t appZclBuffer[APP_ZCL_BUFFER_SIZE];
 uint16_t appZclBufferLen;
 bool zclCmdIsBuilt = false;
@@ -282,7 +287,7 @@ void sli_zigbee_zcl_read_cli_command(sl_cli_command_arg_t *arguments)
   EmberAfClusterId cluster = (EmberAfClusterId)sl_cli_get_argument_uint16(arguments, 1);
   EmberAfAttributeId attribute = (EmberAfAttributeId)sl_cli_get_argument_uint16(arguments, 2);
   bool serverAttribute = (bool)sl_cli_get_argument_uint8(arguments, 3);
-  uint8_t data[ATTRIBUTE_LARGEST];
+  uint8_t data[ATTRIBUTE_MAX_DATA_SIZE + 2]; // Addional 2 bytes to accommodate the long string length fields
   uint8_t dataType;
 
   sl_zigbee_core_debug_print("%s: ep: %d, cl: 0x%04X, attr: 0x%04X",
@@ -323,7 +328,7 @@ void sli_zigbee_zcl_write_cli_command(sl_cli_command_arg_t *arguments)
   EmberAfStatus status;
   // Ensure data[] is at least two bytes to accommodate possibility
   // of zero-length LONG string having two-byte length prefix.
-  uint8_t data[ATTRIBUTE_LARGEST + 1];
+  uint8_t data[ATTRIBUTE_MAX_DATA_SIZE + 2]; // Addional 2 bytes to accommodate the long string length fields
 
   uint8_t  endpoint  = sl_cli_get_argument_uint8(arguments, 0);
   uint16_t cluster   = sl_cli_get_argument_uint16(arguments, 1);
@@ -342,13 +347,13 @@ void sli_zigbee_zcl_write_cli_command(sl_cli_command_arg_t *arguments)
 
   // If the data type is a string, automatically prepend a length to the data;
   // otherwise, just copy the raw bytes.
-  MEMSET(data, 0, ATTRIBUTE_LARGEST);
+  MEMSET(data, 0, sizeof(data));
   if (emberAfIsStringAttributeType(dataType)) {
     // string, 1-byte length prefix
     data[0] = sl_zigbee_copy_hex_arg(arguments,
                                      5,
                                      data + 1,
-                                     ATTRIBUTE_LARGEST - 1,
+                                     ATTRIBUTE_MAX_DATA_SIZE,
                                      false);
   } else if (emberAfIsLongStringAttributeType(dataType)) {
     // LONG string with 2-byte length prefix.
@@ -357,11 +362,8 @@ void sli_zigbee_zcl_write_cli_command(sl_cli_command_arg_t *arguments)
     data[0] = sl_zigbee_copy_hex_arg(arguments,
                                      5,
                                      data + 2,
-                                     ATTRIBUTE_LARGEST - 2,
+                                     ATTRIBUTE_MAX_DATA_SIZE,
                                      false);
-#if (ATTRIBUTE_LARGEST < 1)
-#error "ATTRIBUTE_LARGEST should be greater greater than 0"
-#endif
     data[1] = 0;
   } else {
     sl_zigbee_copy_hex_arg(arguments,
@@ -880,7 +882,7 @@ void sli_zigbee_cli_zcl_global_report_command(sl_cli_command_arg_t *arguments)
   uint8_t mask = (uint8_t)sl_cli_get_argument_uint8(arguments, 3);
   EmberAfAttributeType type;
   uint16_t size;
-  uint8_t data[ATTRIBUTE_LARGEST];
+  uint8_t data[ATTRIBUTE_MAX_DATA_SIZE];
 
   status = emberAfReadAttribute((uint8_t)sl_cli_get_argument_uint8(arguments, 0), // endpoint
                                 clusterId,

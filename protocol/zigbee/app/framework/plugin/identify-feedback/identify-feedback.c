@@ -32,7 +32,18 @@ void emberAfPluginIdentifyFeedbackProvideFeedbackEventHandler(sl_zigbee_event_t 
 #define LED_FEEDBACK
 #endif
 
-static bool identifyTable[EMBER_AF_IDENTIFY_CLUSTER_SERVER_ENDPOINT_COUNT];
+static bool identifyTable[EMBER_AF_IDENTIFY_CLUSTER_SERVER_ENDPOINT_COUNT] = { false };
+
+// Verify if there is at least one ongoing endpoint verification
+static bool haveIdentifyingEndpoint(void)
+{
+  for (int i = 0; i < EMBER_AF_IDENTIFY_CLUSTER_SERVER_ENDPOINT_COUNT; i++) {
+    if (identifyTable[i]) {
+      return true;
+    }
+  }
+  return false;
+}
 
 void sli_zigbee_af_identify_init_callback(uint8_t init_level)
 {
@@ -41,6 +52,7 @@ void sli_zigbee_af_identify_init_callback(uint8_t init_level)
   sl_zigbee_event_init(provideFeedbackEventControl,
                        emberAfPluginIdentifyFeedbackProvideFeedbackEventHandler);
 }
+
 void emberAfPluginIdentifyFeedbackProvideFeedbackEventHandler(sl_zigbee_event_t * event)
 {
 #if !defined(EZSP_HOST)
@@ -70,20 +82,16 @@ void emberAfPluginIdentifyStartFeedbackCallback(uint8_t endpoint,
                                 endpoint,
                                 identifyTime);
 
+  if (!haveIdentifyingEndpoint()) {
+    sl_zigbee_event_set_delay_ms(provideFeedbackEventControl,
+                                 MILLISECOND_TICKS_PER_SECOND);
+  }
   identifyTable[ep] = true;
-
-  // This initialization is needed because this callback is invoked in the
-  // component init callback, so it may occur before this component init callback.
-  sl_zigbee_event_init(provideFeedbackEventControl,
-                       emberAfPluginIdentifyFeedbackProvideFeedbackEventHandler);
-  sl_zigbee_event_set_delay_ms(provideFeedbackEventControl,
-                               MILLISECOND_TICKS_PER_SECOND);
 }
 
 void emberAfPluginIdentifyStopFeedbackCallback(uint8_t endpoint)
 {
   uint8_t ep = emberAfFindClusterServerEndpointIndex(endpoint, ZCL_IDENTIFY_CLUSTER_ID);
-  uint8_t i;
 
   if (ep == 0xFF) {
     emberAfIdentifyClusterPrintln("ERR: invalid endpoint supplied for identification.");
@@ -94,10 +102,9 @@ void emberAfPluginIdentifyStopFeedbackCallback(uint8_t endpoint)
 
   identifyTable[ep] = false;
 
-  for (i = 0; i < EMBER_AF_IDENTIFY_CLUSTER_SERVER_ENDPOINT_COUNT; i++) {
-    if (identifyTable[i]) {
-      return;
-    }
+  // Do not set provideFeedback event to inactive if there is at least one ongoing endpoint identification
+  if (haveIdentifyingEndpoint()) {
+    return;
   }
 
   emberAfIdentifyClusterPrintln("No endpoints identifying; stopping identification feedback.");

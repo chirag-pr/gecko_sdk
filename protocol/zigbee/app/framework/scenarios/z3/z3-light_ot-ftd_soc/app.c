@@ -59,6 +59,23 @@ static sl_zigbee_event_t finding_and_binding_event;
 
 static otInstance *     sInstance       = NULL;
 
+/*
+ * Provide, if required an "otPlatLog()" function
+ */
+#if OPENTHREAD_CONFIG_LOG_OUTPUT == OPENTHREAD_CONFIG_LOG_OUTPUT_APP
+void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const char *aFormat, ...)
+{
+  OT_UNUSED_VARIABLE(aLogLevel);
+  OT_UNUSED_VARIABLE(aLogRegion);
+  OT_UNUSED_VARIABLE(aFormat);
+
+  va_list ap;
+  va_start(ap, aFormat);
+  otCliPlatLogv(aLogLevel, aLogRegion, aFormat, ap);
+  va_end(ap);
+}
+#endif
+
 void sl_ot_create_instance(void)
 {
   #if OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_ENABLE

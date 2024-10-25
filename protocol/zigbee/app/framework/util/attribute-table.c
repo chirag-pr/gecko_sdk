@@ -429,7 +429,7 @@ static void emberAfAttributeDecodeAndPrintCluster(EmberAfClusterId cluster, uint
 
 void emberAfPrintAttributeTable(void)
 {
-  uint8_t data[ATTRIBUTE_LARGEST];
+  uint8_t data[ATTRIBUTE_MAX_DATA_SIZE];
   uint8_t endpointIndex, clusterIndex;
   uint16_t attributeIndex;
   EmberAfStatus status;
@@ -484,7 +484,7 @@ void emberAfPrintAttributeTable(void)
                                                : CLUSTER_MASK_SERVER),
                                               mfgCode,
                                               data,
-                                              ATTRIBUTE_LARGEST,
+                                              ATTRIBUTE_MAX_DATA_SIZE,
                                               NULL);
         if (status == EMBER_ZCL_STATUS_UNSUPPORTED_ATTRIBUTE) {
           emberAfAttributesPrintln("Unsupported");
@@ -521,7 +521,7 @@ EmberAfStatus emberAfRetrieveAttributeAndCraftResponse(uint8_t endpoint,
                                                        uint16_t readLength)
 {
   EmberAfStatus status = EMBER_ZCL_STATUS_SUCCESS;
-  uint8_t data[ATTRIBUTE_LARGEST];
+  uint8_t data[ATTRIBUTE_MAX_DATA_SIZE];
   uint8_t dataType;
   uint16_t dataLen = 0;
 
@@ -541,7 +541,7 @@ EmberAfStatus emberAfRetrieveAttributeAndCraftResponse(uint8_t endpoint,
                                         mask,
                                         manufacturerCode,
                                         data,
-                                        ATTRIBUTE_LARGEST,
+                                        ATTRIBUTE_MAX_DATA_SIZE,
                                         &dataType);
   if (status == EMBER_ZCL_STATUS_SUCCESS) {
     dataLen = emberAfAttributeValueSize(dataType, data, (uint16_t) sizeof(data));
@@ -615,7 +615,7 @@ EmberAfStatus emberAfAppendAttributeReportFields(uint8_t endpoint,
   EmberAfAttributeType type;
   uint16_t size;
   uint16_t bufLen16 = (uint16_t) bufLen;
-  uint8_t data[ATTRIBUTE_LARGEST];
+  uint8_t data[ATTRIBUTE_MAX_DATA_SIZE];
 
   status = emberAfReadAttribute(endpoint,
                                 clusterId,

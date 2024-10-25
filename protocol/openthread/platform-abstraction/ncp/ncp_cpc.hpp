@@ -48,8 +48,7 @@
 #define SL_CPC_APP_DATA_MAX_LENGTH SL_CPC_TX_PAYLOAD_MAX_LENGTH_WITH_SECURITY
 #endif
 
-static_assert(OPENTHREAD_CONFIG_NCP_CPC_TX_CHUNK_SIZE <= SL_CPC_APP_DATA_MAX_LENGTH, 
-              "TX buffer size is too large!");
+static_assert(OPENTHREAD_CONFIG_NCP_CPC_TX_CHUNK_SIZE <= SL_CPC_APP_DATA_MAX_LENGTH, "TX buffer size is too large!");
 
 namespace ot {
 namespace Ncp {
@@ -67,6 +66,17 @@ public:
      */
     explicit NcpCPC(Instance *aInstance);
 
+#if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE && OPENTHREAD_RADIO
+    /**
+     * Constructor
+     *
+     * @param[in]  aInstance  The OpenThread instance pointers array.
+     * @param[in]  aCount     Number of instances in the array.
+     *
+     */
+    explicit NcpCPC(Instance **aInstances, uint8_t aCount);
+#endif
+
     /**
      * This method is called to transmit and receive data.
      *
@@ -81,10 +91,10 @@ private:
 
     void HandleFrameAddedToNcpBuffer(void);
 
-    static void HandleFrameAddedToNcpBuffer(void *                   aContext,
+    static void HandleFrameAddedToNcpBuffer(void                    *aContext,
                                             Spinel::Buffer::FrameTag aTag,
                                             Spinel::Buffer::Priority aPriority,
-                                            Spinel::Buffer *         aBuffer);
+                                            Spinel::Buffer          *aBuffer);
 
     void        SendToCPC(void);
     static void SendToCPC(Tasklet &aTasklet);

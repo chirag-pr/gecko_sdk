@@ -15,9 +15,6 @@ requires:
   - name: device
   - name: emlib_rmu
   - name: event_handler
-  - name: ot_core_vendor_extension
-    condition:
-      - ot_ncp
 
 include:
   - path: protocol/openthread/src/legacy_hal/include
@@ -56,6 +53,9 @@ define:
   - name: PHY_RAIL
     condition:
       - device_cortexm
+  # Enable crash dump logging
+  - name: OPENTHREAD_CONFIG_PLATFORM_LOG_CRASH_DUMP_ENABLE
+    value: 1
 template_contribution:
   - name: component_catalog
     value: ot_crash_handler
@@ -83,7 +83,4 @@ template_contribution:
     #   For RCP with OPENTHREAD_CONFIG_LOG_OUTPUT set to APP, this template
     #   contribution will cause the logs to be printed over spinel before the
     #   RCP capabilities are sent to the host.
-    #
-    #   To print logs on NCP/RCP initialization, use the `ot_core_vendor_extension`
-    #   component with this component.
     unless: [freertos, ot_ncp]

@@ -46,8 +46,8 @@
 #include "platform-efr32.h"
 
 #if defined(SL_CATALOG_OT_CRASH_HANDLER_PRESENT)
-#include <openthread/logging.h>
 #include "crash_handler.h"
+#include <openthread/logging.h>
 #endif
 
 static uint32_t sResetCause;
@@ -70,7 +70,8 @@ void otPlatReset(otInstance *aInstance)
 OT_TOOL_WEAK void bootloader_rebootAndInstall(void)
 {
     // Weak stub function
-    // This should be discarded in favor of the function definition in bootloader_interface code, when that component is used
+    // This should be discarded in favor of the function definition in bootloader_interface code, when that component is
+    // used
 }
 
 otError otPlatResetToBootloader(otInstance *aInstance)
@@ -160,15 +161,12 @@ otPlatResetReason otPlatGetResetReason(otInstance *aInstance)
 #if defined(SL_CATALOG_OT_CRASH_HANDLER_PRESENT)
 void efr32PrintResetInfo(void)
 {
-    otLogCritPlat("Reset info: 0x%x (%s)",
-                                halGetResetInfo(),
-                                halGetResetString());
+    otLogCritPlat("Reset info: 0x%x (%s)", halGetResetInfo(), halGetResetString());
 
-    otLogCritPlat("Extended Reset info: 0x%2X (%s)",
-                                halGetExtendedResetInfo(),
-                                halGetExtendedResetString());
+    otLogCritPlat("Extended Reset info: 0x%2X (%s)", halGetExtendedResetInfo(), halGetExtendedResetString());
 
-    if (halResetWasCrash()) {
+    if (halResetWasCrash())
+    {
         // We pass port 0 here though this parameter is unused in the legacy HAL
         // version of the diagnostic code.
         halPrintCrashSummary(0);
@@ -222,3 +220,18 @@ otError railStatusToOtError(RAIL_Status_t status)
         return OT_ERROR_FAILED;
     }
 }
+
+#if OPENTHREAD_CONFIG_PLATFORM_LOG_CRASH_DUMP_ENABLE
+otError otPlatLogCrashDump(void)
+{
+    otError error = OT_ERROR_NONE;
+
+#if defined(SL_CATALOG_OT_CRASH_HANDLER_PRESENT)
+    efr32PrintResetInfo();
+#else
+    error = OT_ERROR_NOT_CAPABLE;
+#endif
+
+    return error;
+}
+#endif

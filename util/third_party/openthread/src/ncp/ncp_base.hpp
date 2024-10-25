@@ -62,6 +62,20 @@
 #include "lib/spinel/spinel_decoder.hpp"
 #include "lib/spinel/spinel_encoder.hpp"
 
+#if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
+#define SPINEL_HEADER_IID_BROADCAST OPENTHREAD_SPINEL_CONFIG_BROADCAST_IID
+#else
+#define SPINEL_HEADER_IID_BROADCAST SPINEL_HEADER_IID_0
+#endif
+
+// In case of host<->ncp<->rcp configuration, notifications shall be
+// received on broadcast iid on ncp, but transmitted on IID 0 to host.
+#if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE && OPENTHREAD_RADIO
+#define SPINEL_HEADER_TX_NOTIFICATION_IID SPINEL_HEADER_IID_BROADCAST
+#else
+#define SPINEL_HEADER_TX_NOTIFICATION_IID SPINEL_HEADER_IID_0
+#endif
+
 namespace ot {
 namespace Ncp {
 
@@ -72,10 +86,10 @@ public:
     {
         kSpinelCmdHeaderSize = 2, ///< Size of spinel command header (in bytes).
         kSpinelPropIdSize    = 3, ///< Size of spinel property identifier (in bytes).
-#ifdef OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
-        kSpinelHeaderMaxNumIID = 4, ///< Maximum number of Spinel Interface IDs.
+#if OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_ENABLE && OPENTHREAD_RADIO
+        kSpinelInterfaceCount = SPINEL_HEADER_IID_MAX + 1, // Number of supported spinel interfaces
 #else
-        kSpinelHeaderMaxNumIID = 1, ///< Maximum number of Spinel Interface IDs.
+        kSpinelInterfaceCount = 1, // Only one interface supported in single instance configuration
 #endif
     };
 
@@ -83,23 +97,65 @@ public:
      * Creates and initializes an NcpBase instance.
      *
      * @param[in]  aInstance  The OpenThread instance structure.
-     *
      */
     explicit NcpBase(Instance *aInstance);
+
+#if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE && OPENTHREAD_RADIO
+    /**
+     * Creates and initializes an NcpBase instance.
+     *
+     * @param[in]  aInstances  The OpenThread instances structure pointer array.
+     * @param[in]  aCount      Number of the instances in the array.
+     */
+    explicit NcpBase(Instance **aInstances, uint8_t aCount);
+
+#endif // OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE && OPENTHREAD_RADIO
 
     /**
      * Returns the pointer to the single NCP instance.
      *
      * @returns Pointer to the single NCP instance.
-     *
      */
     static NcpBase *GetNcpInstance(void);
 
     /**
-     * Returns the IID of the current spinel command.
+     * Returns an IID for the given instance
+     *
+     * Returned IID is an integer value that must be shifted by SPINEL_HEADER_IID_SHIFT before putting into spinel
+     * header. If multipan interface is not enabled or build is not for RCP IID=0 is returned. If nullptr is passed it
+     * matches broadcast IID in current implementation. Broadcast IID is also returned in case no match was found.
+     *
+     * @param[in] aInstance  Instance pointer to match with IID
+     *
+     * @returns Spinel Interface Identifier to use for communication for this instance
+     */
+    uint8_t InstanceToIid(Instance *aInstance);
+
+    /**
+     * Returns an OT instance for the given IID
+     *
+     * Returns an OpenThread instance object associated to the given IID.
+     * If multipan interface is not enabled or build is not for RCP returned value is the same instance object
+     * regardless of the aIid parameter In current implementation nullptr is returned for broadcast IID and values
+     * exceeding the instances count but lower than kSpinelInterfaceCount.
+     *
+     * @param[in] aIid  IID used in the Spinel communication
+     *
+     * @returns OpenThread instance object associated with the given IID
+     */
+    Instance *IidToInstance(uint8_t aIid);
+
+#if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
+    /**
+     * Called to send notification to host about switchower results.
+     */
+    void NotifySwitchoverDone(otInstance *aInstance, bool aSuccess);
+#endif
+
+    /**
+     * This method returns the IID of the current spinel command.
      *
      * @returns IID.
-     *
      */
     spinel_iid_t GetCurCommandIid(void) const;
 
@@ -117,7 +173,6 @@ public:
      * @retval OT_ERROR_BUSY         There are not enough resources to complete this
      *                               request. This is usually a temporary condition.
      * @retval OT_ERROR_INVALID_ARGS The given aStreamId was invalid.
-     *
      */
     otError StreamWrite(int aStreamId, const uint8_t *aDataPtr, int aDataLen);
 
@@ -127,7 +182,6 @@ public:
      * @param[in] aLogLevel   The log level
      * @param[in] aLogRegion  The log region
      * @param[in] aLogString  The log string
-     *
      */
     void Log(otLogLevel aLogLevel, otLogRegion aLogRegion, const char *aLogString);
 
@@ -137,7 +191,6 @@ public:
      *
      * @param[in] aAllowPeekDelegate      Delegate function pointer for peek operation.
      * @param[in] aAllowPokeDelegate      Delegate function pointer for poke operation.
-     *
      */
     void RegisterPeekPokeDelegates(otNcpDelegateAllowPeekPoke aAllowPeekDelegate,
                                    otNcpDelegateAllowPeekPoke aAllowPokeDelegate);
@@ -163,12 +216,21 @@ public:
      */
     bool ShouldDeferHostSend(void);
 
+    /**
+     * Check if the infrastructure interface has an IPv6 address.
+     *
+     * @param[in]  aInfraIfIndex  The index of the instructure interface to query.
+     * @param[in]  aAddress       The IPv6 address to query.
+     */
+    bool InfraIfHasAddress(uint32_t aInfraIfIndex, const otIp6Address *aAddress);
+
 protected:
+    static constexpr uint8_t kBitsPerByte = 8; ///< Number of bits in a byte.
+
     typedef otError (NcpBase::*PropertyHandler)(void);
 
     /**
      * Represents the `ResponseEntry` type.
-     *
      */
     enum ResponseType
     {
@@ -179,7 +241,6 @@ protected:
 
     /**
      * Represents a spinel response entry.
-     *
      */
     struct ResponseEntry
     {
@@ -241,7 +302,7 @@ protected:
         return EnqueueResponse(aHeader, kResponseTypeLastStatus, aStatus);
     }
 
-    static uint8_t GetWrappedQueueIndex(uint8_t aPosition, uint8_t aQueueSize);
+    static uint8_t GetWrappedResponseQueueIndex(uint8_t aPosition);
 
     static void UpdateChangedProps(Tasklet &aTasklet);
     void        UpdateChangedProps(void);
@@ -258,17 +319,26 @@ protected:
 #if OPENTHREAD_RADIO || OPENTHREAD_CONFIG_LINK_RAW_ENABLE
     otError PackRadioFrame(otRadioFrame *aFrame, otError aError);
 
+#if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
+    void NotifySwitchoverDone(bool aSuccess);
+#endif
+
     static void LinkRawReceiveDone(otInstance *aInstance, otRadioFrame *aFrame, otError aError);
-    void        LinkRawReceiveDone(otRadioFrame *aFrame, otError aError);
+    void        LinkRawReceiveDone(uint8_t aIid, otRadioFrame *aFrame, otError aError);
 
     static void LinkRawTransmitDone(otInstance   *aInstance,
                                     otRadioFrame *aFrame,
                                     otRadioFrame *aAckFrame,
                                     otError       aError);
-    void        LinkRawTransmitDone(otRadioFrame *aFrame, otRadioFrame *aAckFrame, otError aError);
+    void        LinkRawTransmitDone(uint8_t aIid, otRadioFrame *aFrame, otRadioFrame *aAckFrame, otError aError);
 
     static void LinkRawEnergyScanDone(otInstance *aInstance, int8_t aEnergyScanMaxRssi);
-    void        LinkRawEnergyScanDone(int8_t aEnergyScanMaxRssi);
+    void        LinkRawEnergyScanDone(uint8_t aIid, int8_t aEnergyScanMaxRssi);
+
+    static inline uint8_t GetNcpBaseIid(otInstance *aInstance)
+    {
+        return sNcpInstance->InstanceToIid(static_cast<Instance *>(aInstance));
+    }
 
 #endif // OPENTHREAD_RADIO || OPENTHREAD_CONFIG_LINK_RAW_ENABLE
 
@@ -476,6 +546,11 @@ protected:
     static uint8_t      ConvertLogLevel(otLogLevel aLogLevel);
     static unsigned int ConvertLogRegion(otLogRegion aLogRegion);
 
+#if OPENTHREAD_CONFIG_DIAG_ENABLE
+    static void HandleDiagOutput_Jump(const char *aFormat, va_list aArguments, void *aContext);
+    void        HandleDiagOutput(const char *aFormat, va_list aArguments);
+#endif
+
 #if OPENTHREAD_ENABLE_NCP_VENDOR_HOOK
     /**
      * Defines a vendor "command handler" hook to process vendor-specific spinel commands.
@@ -485,7 +560,6 @@ protected:
      *
      * @retval OT_ERROR_NONE     The response is prepared.
      * @retval OT_ERROR_NO_BUFS  Out of buffer while preparing the response.
-     *
      */
     otError VendorCommandHandler(uint8_t aHeader, unsigned int aCommand);
 
@@ -500,7 +574,6 @@ protected:
      *     implement mechanisms to re-send a failed/pending response or an async spinel frame.
      *
      * @param[in] aFrameTag    The tag of the frame removed from NCP buffer.
-     *
      */
     void VendorHandleFrameRemovedFromNcpBuffer(Spinel::Buffer::FrameTag aFrameTag);
 
@@ -517,7 +590,6 @@ protected:
      * @retval OT_ERROR_NONE          Successfully retrieved the property value and prepared the response.
      * @retval OT_ERROR_NOT_FOUND     Does not support the given property key.
      * @retval OT_ERROR_NO_BUFS       Out of buffer while preparing the response.
-     *
      */
     otError VendorGetPropertyHandler(spinel_prop_key_t aPropKey);
 
@@ -536,21 +608,23 @@ protected:
      *
      * @returns OT_ERROR_NOT_FOUND if it does not support the given property key, otherwise the error in either parsing
      *          of the input or the "set" operation.
-     *
      */
     otError VendorSetPropertyHandler(spinel_prop_key_t aPropKey);
 
 #endif // OPENTHREAD_ENABLE_NCP_VENDOR_HOOK
 
+    static void ThreadDetachGracefullyHandler(void *aContext);
+
+    void ThreadDetachGracefullyHandler(void);
+
+    static void DatasetSendMgmtPendingSetHandler(otError aResult, void *aContext);
+
+    void DatasetSendMgmtPendingSetHandler(otError aResult);
+
 protected:
     static NcpBase        *sNcpInstance;
     static spinel_status_t ThreadErrorToSpinelStatus(otError aError);
     static uint8_t         LinkFlagsToFlagByte(bool aRxOnWhenIdle, bool aDeviceType, bool aNetworkData);
-    Instance              *mInstance;
-    Spinel::Buffer         mTxFrameBuffer;
-    Spinel::Encoder        mEncoder;
-    Spinel::Decoder        mDecoder;
-    bool                   mHostPowerStateInProgress;
 
     enum
     {
@@ -559,6 +633,15 @@ protected:
         kInvalidScanChannel = -1, // Invalid scan channel.
     };
 
+    Instance *mInstance;
+#if OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_ENABLE && OPENTHREAD_RADIO
+    Instance *mInstances[kSpinelInterfaceCount];
+#endif
+    Spinel::Buffer  mTxFrameBuffer;
+    Spinel::Encoder mEncoder;
+    Spinel::Decoder mDecoder;
+    bool            mHostPowerStateInProgress;
+
     spinel_status_t mLastStatus;
     uint32_t        mScanChannelMask;
     uint16_t        mScanPeriod;
@@ -566,11 +649,6 @@ protected:
     bool            mDiscoveryScanEnableFiltering;
     uint16_t        mDiscoveryScanPanId;
 
-#if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
-#if OPENTHREAD_RADIO || OPENTHREAD_CONFIG_LINK_RAW_ENABLE
-    Tasklet mHandlePendingCommandsTask;
-#endif
-#endif
     Tasklet         mUpdateChangedPropsTask;
     uint32_t        mThreadChangedFlags;
     ChangedPropsSet mChangedPropsSet;
@@ -586,7 +664,7 @@ protected:
 
     uint8_t mTxBuffer[kTxBufferSize];
 
-    spinel_tid_t mNextExpectedTid[kSpinelHeaderMaxNumIID];
+    spinel_tid_t mNextExpectedTid[kSpinelInterfaceCount];
 
     uint8_t       mResponseQueueHead;
     uint8_t       mResponseQueueTail;
@@ -594,7 +672,7 @@ protected:
 
     bool mAllowLocalNetworkDataChange;
     bool mRequireJoinExistingNetwork;
-    bool mIsRawStreamEnabled;
+    bool mIsRawStreamEnabled[kSpinelInterfaceCount];
     bool mPcapEnabled;
     bool mDisableStreamWrite;
     bool mShouldEmitChildTableUpdate;
@@ -608,48 +686,13 @@ protected:
 #endif
     uint8_t mPreferredRouteId;
 #endif
-
-    uint8_t mCurCommandIID;
+    uint8_t mCurCommandIid;
 
 #if OPENTHREAD_RADIO || OPENTHREAD_CONFIG_LINK_RAW_ENABLE
-    uint8_t mCurTransmitIID;
-    uint8_t mCurTransmitTID;
-    int8_t  mCurScanChannel;
-    bool    mSrcMatchEnabled;
+    uint8_t mCurTransmitTID[kSpinelInterfaceCount];
+    int8_t  mCurScanChannel[kSpinelInterfaceCount];
+    bool    mSrcMatchEnabled[kSpinelInterfaceCount];
 #endif // OPENTHREAD_RADIO || OPENTHREAD_CONFIG_LINK_RAW_ENABLE
-
-#if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
-#if OPENTHREAD_RADIO || OPENTHREAD_CONFIG_LINK_RAW_ENABLE
-    static constexpr uint16_t kPendingCommandQueueSize = kSpinelHeaderMaxNumIID - 1;
-
-    enum PendingCommandType
-    {
-        kPendingCommandTypeTransmit,
-        kPendingCommandTypeEnergyScan,
-    };
-
-    struct PendingCommandEntry
-    {
-        uint8_t      mType : 2;
-        uint8_t      mIid : 2;
-        uint8_t      mTid : 4;
-        uint8_t      mScanChannel;
-        otRadioFrame mTransmitFrame;
-        uint8_t      mTransmitPsdu[OT_RADIO_FRAME_MAX_SIZE];
-    };
-
-    uint8_t             mPendingCommandQueueHead;
-    uint8_t             mPendingCommandQueueTail;
-    PendingCommandEntry mPendingCommandQueue[kPendingCommandQueueSize];
-
-    otError     EnqueuePendingCommand(PendingCommandType aType, uint8_t aHeader, uint8_t aScanChannel);
-    otError     HandlePendingTransmit(PendingCommandEntry *aEntry);
-    otError     HandlePendingEnergyScan(PendingCommandEntry *aEntry);
-    static void HandlePendingCommands(Tasklet &aTasklet);
-    void        HandlePendingCommands(void);
-    size_t      GetPendingCommandQueueSize(void) const;
-#endif // OPENTHREAD_RADIO || OPENTHREAD_CONFIG_LINK_RAW_ENABLE
-#endif // OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
 
 #if OPENTHREAD_MTD || OPENTHREAD_FTD
     otMessageQueue mMessageQueue;
@@ -692,7 +735,24 @@ protected:
 
     bool mDidInitialUpdates;
 
+    spinel_status_t mDatasetSendMgmtPendingSetResult;
+
     uint64_t mLogTimestampBase; // Timestamp base used for logging
+
+#if OPENTHREAD_FTD && OPENTHREAD_CONFIG_NCP_INFRA_IF_ENABLE && OPENTHREAD_CONFIG_BORDER_ROUTING_ENABLE
+    otError InfraIfAddAddress(const otIp6Address &aAddress);
+    bool    InfraIfContainsAddress(const otIp6Address &aAddress);
+
+    static constexpr uint8_t kMaxInfraIfAddrs = 10;
+    otIp6Address             mInfraIfAddrs[kMaxInfraIfAddrs];
+    uint8_t                  mInfraIfAddrCount;
+    uint32_t                 mInfraIfIndex;
+#endif
+
+#if OPENTHREAD_CONFIG_DIAG_ENABLE
+    char    *mDiagOutput;
+    uint16_t mDiagOutputLen;
+#endif
 };
 
 } // namespace Ncp

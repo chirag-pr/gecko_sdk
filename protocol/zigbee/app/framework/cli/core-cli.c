@@ -40,7 +40,7 @@
 
 extern uint8_t sli_zigbee_af_cli_network_index;
 
-#ifdef SL_CATALOG_ZIGBEE_TEST_HARNESS_Z3_PRESENT
+#if defined SL_CATALOG_ZIGBEE_TEST_HARNESS_Z3_PRESENT && !defined EMBER_TEST
 extern void sli_get_ztt_version_number_string(char *versionString);
 #endif
 

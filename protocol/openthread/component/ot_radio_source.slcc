@@ -39,6 +39,7 @@ source:
       - path: mac/mac_types.cpp
       - path: mac/sub_mac.cpp
       - path: mac/sub_mac_callbacks.cpp
+      - path: mac/sub_mac_csl_receiver.cpp
       - path: radio/radio.cpp
       - path: radio/radio_callbacks.cpp
       - path: radio/radio_platform.cpp

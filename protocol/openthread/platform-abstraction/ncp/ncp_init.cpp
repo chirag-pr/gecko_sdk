@@ -48,8 +48,14 @@
 #include "ncp_hdlc.hpp"
 #include "utils/uart.h"
 
-void otPlatUartReceived(const uint8_t *aBuf, uint16_t aBufLength) { otNcpHdlcReceive(aBuf, aBufLength); }
-void otPlatUartSendDone(void) { otNcpHdlcSendDone(); }
+void otPlatUartReceived(const uint8_t *aBuf, uint16_t aBufLength)
+{
+    otNcpHdlcReceive(aBuf, aBufLength);
+}
+void otPlatUartSendDone(void)
+{
+    otNcpHdlcSendDone();
+}
 #endif
 
 /**
@@ -106,7 +112,6 @@ extern "C" void otNcpHdlcInit(otInstance *aInstance, otNcpHdlcSendCallback aSend
 
 extern "C" void otAppNcpInit(otInstance *aInstance)
 {
-
 #if OPENTHREAD_CONFIG_NCP_SPI_ENABLE
     otNcpSpiInit(aInstance);
 #elif OPENTHREAD_CONFIG_NCP_HDLC_ENABLE

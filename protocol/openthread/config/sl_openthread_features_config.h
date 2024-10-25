@@ -9,10 +9,10 @@
 //      <OT_THREAD_VERSION_1_1=> Thread 1.1
 //      <OT_THREAD_VERSION_1_2=> Thread 1.2
 //      <OT_THREAD_VERSION_1_3=> Thread 1.3
-// <i>  Thread 1.2 and Thread 1.3 are compatible with Thread 1.1.
-// <i>  Current Default: OT_THREAD_VERSION_1_3
+//      <OT_THREAD_VERSION_1_4=> Thread 1.4
+// <i>  Current Default: OT_THREAD_VERSION_1_4
 #ifndef OPENTHREAD_CONFIG_THREAD_VERSION
-#define OPENTHREAD_CONFIG_THREAD_VERSION OT_THREAD_VERSION_1_3
+#define OPENTHREAD_CONFIG_THREAD_VERSION OT_THREAD_VERSION_1_4
 #endif
 // </h>
 
@@ -60,32 +60,41 @@
 #ifndef OPENTHREAD_CONFIG_MLR_ENABLE
 #define OPENTHREAD_CONFIG_MLR_ENABLE                1
 #endif
-// <q>  DNS Client (Thread 1.3)
+// </h>
+#endif // OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2
+
+#if (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_3)
+// <h>  The following features require at least Thread Stack Protocol Version 1.3
+// <q>  DNS Client
 #ifndef OPENTHREAD_CONFIG_DNS_CLIENT_ENABLE
 #define OPENTHREAD_CONFIG_DNS_CLIENT_ENABLE         1
 #endif
-// <q>  DNS-SD Server (Thread 1.3)
+// <q>  DNS-SD Server
 #ifndef OPENTHREAD_CONFIG_DNSSD_SERVER_ENABLE
 #define OPENTHREAD_CONFIG_DNSSD_SERVER_ENABLE       0
 #endif
-// <q>  Service Registration Protocol (SRP) Client (Thread 1.3)
+// <q>  Service Registration Protocol (SRP) Client
 #ifndef OPENTHREAD_CONFIG_SRP_CLIENT_ENABLE
 #define OPENTHREAD_CONFIG_SRP_CLIENT_ENABLE         1
 #endif
-// <q>  Service Registration Protocol (SRP) Server (Thread 1.3)
+// <q>  Service Registration Protocol (SRP) Server
 #ifndef OPENTHREAD_CONFIG_SRP_SERVER_ENABLE
 #define OPENTHREAD_CONFIG_SRP_SERVER_ENABLE         0
 #endif
-// <q>  TCPlp (Low power TCP over OpenThread) (Thread 1.3)
+// <q>  TCPlp (Low power TCP over OpenThread)
 #ifndef OPENTHREAD_CONFIG_TCP_ENABLE
 #define OPENTHREAD_CONFIG_TCP_ENABLE                0
 #endif
-// <q> Thread over Infrastructure (Thread 1.3: NCP only)
+// <q>  DNS Client over TCP
+#ifndef OPENTHREAD_CONFIG_DNS_CLIENT_OVER_TCP_ENABLE
+#define OPENTHREAD_CONFIG_DNS_CLIENT_OVER_TCP_ENABLE 0
+#endif
+// <q> Thread over Infrastructure (NCP only)
 #ifndef OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE
 #define OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE 0
 #endif
 // </h>
-#endif // OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2
+#endif // OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_3
 
 // <e>  Border Agent
 #ifndef OPENTHREAD_CONFIG_BORDER_AGENT_ENABLE
@@ -211,6 +220,21 @@
 #define OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_ENABLE      0
 #endif
 // </e>
+// <e>  Multiple Static Instance Support
+#ifndef OPENTHREAD_CONFIG_MULTIPLE_STATIC_INSTANCE_ENABLE
+#define OPENTHREAD_CONFIG_MULTIPLE_STATIC_INSTANCE_ENABLE      0
+#endif
+// </e>
+// <e>  Number of OpenThread Instances For Static Buffer Allocation
+#ifndef OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_NUM
+#define OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_NUM      2
+#endif
+// </e>
+// <e>  Define broadcast IID for spinel frames dedicated to all hosts in multipan configuration
+#ifndef OPENTHREAD_SPINEL_CONFIG_BROADCAST_IID
+#define OPENTHREAD_SPINEL_CONFIG_BROADCAST_IID      0
+#endif
+// </e>
 // <e>  OTNS (OpenThread Network Simulator)
 #ifndef OPENTHREAD_CONFIG_OTNS_ENABLE
 #define OPENTHREAD_CONFIG_OTNS_ENABLE               0
@@ -318,7 +342,14 @@
 #define OPENTHREAD_CONFIG_LOG_PREPEND_LEVEL         1
 #endif
 
+#endif // OPENTHREAD_FULL_LOGS_ENABLE
+
+// <e> Log crash dump after initialization
+#ifndef OPENTHREAD_CONFIG_PLATFORM_LOG_CRASH_DUMP_ENABLE
+#define OPENTHREAD_CONFIG_PLATFORM_LOG_CRASH_DUMP_ENABLE 0
 #endif
+// </e>
+
 // </h>
 // </e>
 // </h>

@@ -93,6 +93,7 @@ configuration:
 
 tag:
   - prebuilt_demo
+  - hardware:device:flash:768
 
 readme:
   - path: ./README.md

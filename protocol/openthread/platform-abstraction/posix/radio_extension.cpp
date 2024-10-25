@@ -31,7 +31,7 @@
 
 #include "common/code_utils.hpp"
 
-namespace VendorSpinel  = ot::Spinel::Vendor;
+namespace VendorSpinel = ot::Spinel::Vendor;
 
 /**
  * @file
@@ -78,7 +78,7 @@ exit:
     return error;
 }
 
-namespace CoexSpinel    = VendorSpinel::Coex;
+namespace CoexSpinel = VendorSpinel::Coex;
 
 otError otPlatRadioExtensionGetDpState(uint8_t *aDpPulse)
 {

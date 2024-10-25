@@ -365,20 +365,22 @@ otError otPlatSpiSlavePrepareTransaction(uint8_t *aOutputBuf,
     uint32_t rx_dma_channel_number = sl_spidrv_handle_data.rxDMACh;
 
     // Check the CS pin if SPI transactions are in progress.
-    otEXPECT_ACTION(GPIO_PinInGet(SL_NCP_SPIDRV_USART_CS_PORT, SL_NCP_SPIDRV_USART_CS_PIN), error=OT_ERROR_BUSY);
+    otEXPECT_ACTION(GPIO_PinInGet(SL_NCP_SPIDRV_USART_CS_PORT, SL_NCP_SPIDRV_USART_CS_PIN), error = OT_ERROR_BUSY);
 
     if (aInputBuf != NULL)
     {
         sl_spidrv_handle_data.peripheral.usartPort->CMD = USART_CMD_CLEARRX;
         // Wait until the Rx fifo clears up.
-        while(sl_spidrv_handle_data.peripheral.usartPort->STATUS & _USART_STATUS_RXDATAV_MASK);
+        while (sl_spidrv_handle_data.peripheral.usartPort->STATUS & _USART_STATUS_RXDATAV_MASK)
+            ;
 
         rx_descriptor.xfer.xferCnt = aInputBufLen - 1U;
         rx_descriptor.xfer.dstAddr = (uint32_t)aInputBuf;
 
         LDMA_StopTransfer(rx_dma_channel_number);
         // Wait if Rx LDMA channel is busy.
-        while(LDMA->CHBUSY & (1 << rx_dma_channel_number));
+        while (LDMA->CHBUSY & (1 << rx_dma_channel_number))
+            ;
 
         LDMA_StartTransfer(rx_dma_channel_number,
                            (LDMA_TransferCfg_t *)&rx_dma_transfer_config,
@@ -389,7 +391,8 @@ otError otPlatSpiSlavePrepareTransaction(uint8_t *aOutputBuf,
     {
         LDMA_StopTransfer(tx_dma_channel_number);
         // Wait if Tx LDMA channel is busy.
-        while(LDMA->CHBUSY & (1 << tx_dma_channel_number));
+        while (LDMA->CHBUSY & (1 << tx_dma_channel_number))
+            ;
 
         sl_spidrv_handle_data.peripheral.usartPort->CMD = USART_CMD_CLEARTX;
 
@@ -397,7 +400,8 @@ otError otPlatSpiSlavePrepareTransaction(uint8_t *aOutputBuf,
         tx_descriptor[0].xfer.srcAddr = (uint32_t)aOutputBuf;
 
         // Wait until Tx fifo clears up.
-        while(sl_spidrv_handle_data.peripheral.usartPort->STATUS & _USART_STATUS_TXBUFCNT_MASK);
+        while (sl_spidrv_handle_data.peripheral.usartPort->STATUS & _USART_STATUS_TXBUFCNT_MASK)
+            ;
 
         LDMA_StartTransfer(tx_dma_channel_number,
                            (LDMA_TransferCfg_t *)&tx_dma_transfer_config,

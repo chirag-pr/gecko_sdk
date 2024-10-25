@@ -8,6 +8,28 @@ CPCD_DEFAULT_BINDING_KEY_FILE=$CPCD_DEFAULT_BINDING_KEY_PATH"/binding.key"
 CPCD_BINDING_KEY_FILE=$CPCD_DEFAULT_BINDING_KEY_FILE
 CPCD_CONTAINER_DEFAULT_BINDING_KEY_FILE="/root/.cpcd/binding.key"
 
+# Default interface ID used if it is not providing while starting multipan otbr and ot-cli processes
+OT_HOST_APP_DEFAULT_IID="2"
+
+# Validate if given IID is a single string of digits between 0-3.
+# Returns default interface id if an argument is null.
+function validate_interface_id()
+{
+    # Check if an argument is not null.
+    if [[ ! -z $1 ]]; then
+        # Validate if an argument is a single string of digits between 0-3.
+        re='^[0-3]+$'
+        if [[ $1 =~ $re ]] ; then
+            echo $1
+        else
+            echo "Error: not a valid iid value."
+            exit 1
+        fi
+    else
+        echo $OT_HOST_APP_DEFAULT_IID
+    fi
+}
+
 while [[ $# -gt 0 ]]; do
     case $1 in
         -h|--help)
@@ -62,7 +84,8 @@ while [[ $# -gt 0 ]]; do
             exit
             ;;
         -O|--ot-cli)
-            docker exec -it multiprotocol /usr/local/bin/ot-cli 'spinel+cpc://cpcd_0?iid=2&iid-list=0'
+            IID=$(validate_interface_id $2)
+            docker exec -it multiprotocol /usr/local/bin/ot-cli 'spinel+cpc://cpcd_0?iid='$IID'&iid-list=0'
             exit
             ;;
         -T|--ot-ctl)
@@ -70,8 +93,9 @@ while [[ $# -gt 0 ]]; do
             docker exec -it multiprotocol ip6tables -D FORWARD 1
             docker exec -it multiprotocol ip6tables -F
             docker exec -it multiprotocol ip6tables -X OTBR_FORWARD_INGRESS
+            IID=$(validate_interface_id $2)
             echo "Starting OTBR..."
-            docker exec -it multiprotocol systemctl start otbr
+            docker exec -it multiprotocol systemctl start otbr@$IID
             sleep 5
             echo "Starting ot-ctl..."
             echo "Press ENTER for prompt..."

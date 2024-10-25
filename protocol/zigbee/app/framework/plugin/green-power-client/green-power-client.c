@@ -313,6 +313,7 @@ bool sli_zigbee_af_green_power_client_gp_proxy_commissioning_mode_command_handle
     // check if current message sender is same as sender that put us in
     // commissioning mode.
     // if not, drop message silently.
+    return false;
   } else if (enterCommissioningMode) {
     commissioningState.commissioningSink = (localCommandLoopback ? emberGetNodeId() : emberGetSender());
     commissioningState.inCommissioningMode = true;
@@ -354,10 +355,14 @@ bool emberAfGreenPowerClusterGpProxyCommissioningModeCallback(EmberAfClusterComm
     return false;
   }
 
-  return sli_zigbee_af_green_power_client_gp_proxy_commissioning_mode_command_handler(cmd_data.options,
-                                                                                      cmd_data.commissioningWindow,
-                                                                                      cmd_data.channel,
-                                                                                      false);
+  bool ret = sli_zigbee_af_green_power_client_gp_proxy_commissioning_mode_command_handler(cmd_data.options,
+                                                                                          cmd_data.commissioningWindow,
+                                                                                          cmd_data.channel,
+                                                                                          false);
+  if (ret == true) {
+    emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
+  }
+  return true;
 }
 
 /*
@@ -427,6 +432,7 @@ bool emberAfGreenPowerClusterGpPairingCallback(EmberAfClusterCommand *cmd)
       //send default response for unicast pairing
       emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_INVALID_FIELD);
     }
+    return true;
   } else {
     // Step b:
 
@@ -456,6 +462,7 @@ bool emberAfGreenPowerClusterGpPairingCallback(EmberAfClusterCommand *cmd)
         if (broadcast != true) {
           // CCB # 2279 - only send default response if not broadcast - broadcasts are dropped
           emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_INSUFFICIENT_SPACE);
+          return true;
         }
       }
     }
@@ -475,10 +482,12 @@ bool emberAfGreenPowerClusterGpPairingCallback(EmberAfClusterCommand *cmd)
         }
         emberAfGreenPowerClusterPrintln("ERR PROXY TABLE FULL");
         emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_INSUFFICIENT_SPACE);
+        return true;
       }
     }
 #endif
   }
+  emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
   return true;
 }
 
@@ -536,6 +545,7 @@ bool emberAfGreenPowerClusterGpResponseCallback(EmberAfClusterCommand *cmd)
 
           sl_zigbee_event_set_delay_ms(&channelEvent,
                                        GP_CHANNEL_EVENT_TIMEOUT_IN_MSEC);
+          emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
           return true;
         } else {
           return false;
@@ -736,7 +746,7 @@ bool emberAfGreenPowerClusterGpProxyTableRequestCallback(EmberAfClusterCommand *
       goto kickout;
     }
   }
-
+  emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
   kickout:  return true;
 }
 

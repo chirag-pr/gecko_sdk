@@ -2,7 +2,7 @@ id: zigbee_high_datarate_phy
 label: zigbee_high_datarate_phy
 package: Zigbee
 category: Zigbee
-quality: evaluation
+quality: production
 description: Provides transmit API and receive callback for high-datarate phy and limited CLI to aid testing of the rail_util_ieee802154_high_speed feature
 
 requires:
@@ -49,6 +49,20 @@ template_contribution:
         - type: uint16
           help: length
       help: Transmit payload of specified length over high datarate phy (data is 1,2,3... len)
+    condition:
+      - cli
+
+  - name: cli_command
+    value:
+      group: high_datarate_phy
+      name: txsched
+      handler: sl_high_datarate_phy_tx_sched_command
+      argument:
+        - type: uint16
+          help: length
+        - type: uint32
+          help: timestamp relative to current time
+      help: Transmits HDR phy packet timestamp microseconds after current time
     condition:
       - cli
 

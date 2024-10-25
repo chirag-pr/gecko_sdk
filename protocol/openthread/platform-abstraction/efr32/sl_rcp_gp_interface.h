@@ -31,8 +31,8 @@
  * @brief This file implements Green Power interface.
  ******************************************************************************/
 
-#ifndef SL_GP_INTERFACE_H_
-#define SL_GP_INTERFACE_H_
+#ifndef SL_RCP_GP_INTERFACE_H_
+#define SL_RCP_GP_INTERFACE_H_
 
 #include <stdbool.h>
 #include <openthread/platform/radio.h>

@@ -61,6 +61,7 @@
 #include "openthread/heap.h"
 #endif
 
+#include "alarm.h"
 #include "platform-efr32.h"
 #include "sl_openthread.h"
 

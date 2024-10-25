@@ -1302,7 +1302,7 @@ void process_timer_irq(uint8_t local_flag)
         timeout_temp = current->timeout_periodic;
 
         periodic_correction = sleeptimer_hal_get_counter() - current->timeout_expected_tc;
-        if (periodic_correction > timeout_temp) {
+        if (periodic_correction >= timeout_temp) {
           skip_remove = true;
           current->timeout_expected_tc += current->timeout_periodic;
         }
@@ -1320,7 +1320,7 @@ void process_timer_irq(uint8_t local_flag)
       // and compensate for any deviation from the periodic timer frequency.
       if (current->timeout_periodic != 0u && skip_remove != true) {
         timeout_temp -= periodic_correction;
-        EFM_ASSERT(timeout_temp >= 0);
+        EFM_ASSERT(timeout_temp > 0);
         // Compensate for drift caused by ms to ticks conversion
         if (current->conversion_error > 0) {
           // Increment accumulated error by the ms to ticks conversion error

@@ -53,9 +53,34 @@ namespace Ncp {
 
 static OT_DEFINE_ALIGNED_VAR(sNcpRaw, sizeof(NcpCPC), uint64_t);
 
+#if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE && OPENTHREAD_RADIO
+extern "C" void otAppNcpInitMulti(otInstance **aInstances, uint8_t aCount)
+{
+    NcpCPC       *ncpCPC = nullptr;
+    ot::Instance *instances[SPINEL_HEADER_IID_MAX];
+
+    OT_ASSERT(aCount < SPINEL_HEADER_IID_MAX + 1);
+    OT_ASSERT(aCount > 0);
+    OT_ASSERT(aInstances != nullptr);
+    OT_ASSERT(aInstances[0] != nullptr);
+
+    for (int i = 0; i < aCount; i++)
+    {
+        instances[i] = static_cast<ot::Instance *>(aInstances[i]);
+    }
+
+    ncpCPC = new (&sNcpRaw) NcpCPC(instances, aCount);
+
+    if (ncpCPC == nullptr || ncpCPC != NcpBase::GetNcpInstance())
+    {
+        OT_ASSERT(false);
+    }
+}
+#endif
+
 extern "C" void otAppNcpInit(otInstance *aInstance)
 {
-    NcpCPC *  ncpCPC   = nullptr;
+    NcpCPC   *ncpCPC   = nullptr;
     Instance *instance = static_cast<Instance *>(aInstance);
 
     ncpCPC = new (&sNcpRaw) NcpCPC(instance);
@@ -65,6 +90,18 @@ extern "C" void otAppNcpInit(otInstance *aInstance)
         OT_ASSERT(false);
     }
 }
+
+#if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE && OPENTHREAD_RADIO
+NcpCPC::NcpCPC(Instance **aInstances, uint8_t aCount)
+    : NcpBase(aInstances, aCount)
+    , mIsReady(false)
+    , mIsWriting(false)
+    , mCpcSendTask(*aInstances[0], SendToCPC)
+    , mCpcEndpointErrorTask(*aInstances[0], HandleEndpointError)
+    , mCpcOpenEndpointTask(*aInstances[0], HandleOpenEndpoint)
+{
+}
+#endif
 
 NcpCPC::NcpCPC(Instance *aInstance)
     : NcpBase(aInstance)
@@ -98,17 +135,20 @@ void NcpCPC::HandleOpenEndpoint(void)
 
     OT_ASSERT(status == SL_STATUS_OK);
 
-    status = sl_cpc_set_endpoint_option(&mUserEp, SL_CPC_ENDPOINT_ON_IFRAME_WRITE_COMPLETED,
+    status = sl_cpc_set_endpoint_option(&mUserEp,
+                                        SL_CPC_ENDPOINT_ON_IFRAME_WRITE_COMPLETED,
                                         reinterpret_cast<void *>(HandleCPCSendDone));
 
     OT_ASSERT(status == SL_STATUS_OK);
 
-    status = sl_cpc_set_endpoint_option(&mUserEp, SL_CPC_ENDPOINT_ON_IFRAME_RECEIVE,
+    status = sl_cpc_set_endpoint_option(&mUserEp,
+                                        SL_CPC_ENDPOINT_ON_IFRAME_RECEIVE,
                                         reinterpret_cast<void *>(HandleCPCReceive));
 
     OT_ASSERT(status == SL_STATUS_OK);
 
-    status = sl_cpc_set_endpoint_option(&mUserEp, SL_CPC_ENDPOINT_ON_ERROR,
+    status = sl_cpc_set_endpoint_option(&mUserEp,
+                                        SL_CPC_ENDPOINT_ON_ERROR,
                                         reinterpret_cast<void *>(HandleCPCEndpointError));
 
     OT_ASSERT(status == SL_STATUS_OK);
@@ -116,10 +156,10 @@ void NcpCPC::HandleOpenEndpoint(void)
     mTxFrameBuffer.SetFrameAddedCallback(HandleFrameAddedToNcpBuffer, this);
 }
 
-void NcpCPC::HandleFrameAddedToNcpBuffer(void *                   aContext,
+void NcpCPC::HandleFrameAddedToNcpBuffer(void                    *aContext,
                                          Spinel::Buffer::FrameTag aTag,
                                          Spinel::Buffer::Priority aPriority,
-                                         Spinel::Buffer *         aBuffer)
+                                         Spinel::Buffer          *aBuffer)
 {
     OT_UNUSED_VARIABLE(aBuffer);
     OT_UNUSED_VARIABLE(aTag);
@@ -156,8 +196,9 @@ void NcpCPC::SendToCPC(void)
     {
         IgnoreError(txFrameBuffer.OutFrameBegin());
         bufferLen = txFrameBuffer.OutFrameGetLength();
-        if (offset + sizeof(uint16_t) + bufferLen < kCpcTxBufferSize) {
-            Encoding::BigEndian::WriteUint16(bufferLen, mCpcTxBuffer + offset);
+        if (offset + sizeof(uint16_t) + bufferLen < kCpcTxBufferSize)
+        {
+            BigEndian::WriteUint16(bufferLen, mCpcTxBuffer + offset);
             offset += sizeof(uint16_t);
             txFrameBuffer.OutFrameRead(bufferLen, mCpcTxBuffer + offset);
             offset += bufferLen;
@@ -165,7 +206,7 @@ void NcpCPC::SendToCPC(void)
         }
         else
         {
-          break;
+            break;
         }
     }
 
@@ -242,12 +283,15 @@ extern "C" void efr32CpcProcess(void)
 void NcpCPC::ProcessCpc(void)
 {
     sl_status_t status;
-    void *      data;
+    void       *data;
     uint16_t    dataLength;
 
     HandleOpenEndpoint();
 
-    status = sl_cpc_read(&mUserEp, &data, &dataLength, 0,
+    status = sl_cpc_read(&mUserEp,
+                         &data,
+                         &dataLength,
+                         0,
                          SL_CPC_FLAG_NO_BLOCK); // In bare-metal read is always
                                                 // non-blocking, but with rtos
                                                 // since this function is called

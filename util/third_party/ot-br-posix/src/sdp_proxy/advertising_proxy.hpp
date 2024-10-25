@@ -45,13 +45,12 @@
 
 #include "common/code_utils.hpp"
 #include "mdns/mdns.hpp"
-#include "ncp/ncp_openthread.hpp"
+#include "ncp/rcp_host.hpp"
 
 namespace otbr {
 
 /**
  * This class implements the Advertising Proxy.
- *
  */
 class AdvertisingProxy : private NonCopyable
 {
@@ -59,32 +58,29 @@ public:
     /**
      * This constructor initializes the Advertising Proxy object.
      *
-     * @param[in] aNcp        A reference to the NCP controller.
+     * @param[in] aHost       A reference to the NCP controller.
      * @param[in] aPublisher  A reference to the mDNS publisher.
-     *
      */
-    explicit AdvertisingProxy(Ncp::ControllerOpenThread &aNcp, Mdns::Publisher &aPublisher);
+    explicit AdvertisingProxy(Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher);
 
     /**
-     * This method starts the Advertising Proxy.
+     * This method enables/disables the Advertising Proxy.
      *
-     * @retval OTBR_ERROR_NONE  Successfully started the Advertising Proxy.
-     * @retval ...              Failed to start the Advertising Proxy.
-     *
+     * @param[in] aIsEnabled  Whether to enable the Advertising Proxy.
      */
-    otbrError Start(void);
-
-    /**
-     * This method stops the Advertising Proxy.
-     *
-     */
-    void Stop();
+    void SetEnabled(bool aIsEnabled);
 
     /**
      * This method publishes all registered hosts and services.
-     *
      */
     void PublishAllHostsAndServices(void);
+
+    /**
+     * This method handles mDNS publisher's state changes.
+     *
+     * @param[in] aState  The state of mDNS publisher.
+     */
+    void HandleMdnsState(Mdns::Publisher::State aState);
 
 private:
     struct OutstandingUpdate
@@ -106,6 +102,10 @@ private:
 
     std::vector<Ip6Address> GetEligibleAddresses(const otIp6Address *aHostAddresses, uint8_t aHostAddressNum);
 
+    void Start(void);
+    void Stop(void);
+    bool IsEnabled(void) const { return mIsEnabled; }
+
     /**
      * This method publishes a specified host and its services.
      *
@@ -117,17 +117,18 @@ private:
      *
      * @retval  OTBR_ERROR_NONE  Successfully published the host and its services.
      * @retval  ...              Failed to publish the host and/or its services.
-     *
      */
     otbrError PublishHostAndItsServices(const otSrpServerHost *aHost, OutstandingUpdate *aUpdate);
 
-    otInstance *GetInstance(void) { return mNcp.GetInstance(); }
+    otInstance *GetInstance(void) { return mHost.GetInstance(); }
 
     // A reference to the NCP controller, has no ownership.
-    Ncp::ControllerOpenThread &mNcp;
+    Ncp::RcpHost &mHost;
 
     // A reference to the mDNS publisher, has no ownership.
     Mdns::Publisher &mPublisher;
+
+    bool mIsEnabled;
 
     // A vector that tracks outstanding updates.
     std::vector<OutstandingUpdate> mOutstandingUpdates;

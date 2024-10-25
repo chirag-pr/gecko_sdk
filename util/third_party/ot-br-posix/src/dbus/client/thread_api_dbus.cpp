@@ -463,6 +463,11 @@ ClientError ThreadApiDBus::SetNat64Enabled(bool aEnabled)
     return CallDBusMethodSync(OTBR_DBUS_SET_NAT64_ENABLED_METHOD, std::tie(aEnabled));
 }
 
+ClientError ThreadApiDBus::SetEphemeralKeyEnabled(bool aEnabled)
+{
+    return SetProperty(OTBR_DBUS_PROPERTY_EPHEMERAL_KEY_ENABLED, aEnabled);
+}
+
 ClientError ThreadApiDBus::SetMeshLocalPrefix(const std::array<uint8_t, OTBR_IP6_PREFIX_SIZE> &aPrefix)
 {
     return SetProperty(OTBR_DBUS_PROPERTY_MESH_LOCAL_PREFIX, aPrefix);
@@ -486,6 +491,11 @@ ClientError ThreadApiDBus::SetLinkMode(const LinkModeConfig &aConfig)
 ClientError ThreadApiDBus::SetRadioRegion(const std::string &aRadioRegion)
 {
     return SetProperty(OTBR_DBUS_PROPERTY_RADIO_REGION, aRadioRegion);
+}
+
+ClientError ThreadApiDBus::GetEphemeralKeyEnabled(bool &aEnabled)
+{
+    return GetProperty(OTBR_DBUS_PROPERTY_EPHEMERAL_KEY_ENABLED, aEnabled);
 }
 
 ClientError ThreadApiDBus::GetLinkMode(LinkModeConfig &aConfig)
@@ -658,6 +668,13 @@ ClientError ThreadApiDBus::GetSrpServerInfo(SrpServerInfo &aSrpServerInfo)
 {
     return GetProperty(OTBR_DBUS_PROPERTY_SRP_SERVER_INFO, aSrpServerInfo);
 }
+
+#if OTBR_ENABLE_TREL
+ClientError ThreadApiDBus::GetTrelInfo(TrelInfo &aTrelInfo)
+{
+    return GetProperty(OTBR_DBUS_PROPERTY_TREL_INFO, aTrelInfo);
+}
+#endif
 
 ClientError ThreadApiDBus::GetMdnsTelemetryInfo(MdnsTelemetryInfo &aMdnsTelemetryInfo)
 {

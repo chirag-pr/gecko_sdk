@@ -113,7 +113,7 @@ static void
 EventHandlerZwRx(void)
 {
   SApplicationHandles* pAppHandles;
-  SZwaveReceivePackage RxPackage;
+  SZwaveReceivePackage RxPackage = { .eReceiveType = EZWAVERECEIVETYPE_INVALID };
 
   pAppHandles = ZAF_getAppHandle();
 
@@ -148,7 +148,7 @@ static void
 EventHandlerZwCommandStatus(void)
 {
   SApplicationHandles* pAppHandles;
-  SZwaveCommandStatusPackage Status;
+  SZwaveCommandStatusPackage Status = { .eStatusType = EZWAVECOMMANDSTATUS_INVALID };
 
   pAppHandles = ZAF_getAppHandle();
 
@@ -325,9 +325,9 @@ event_manager(const uint8_t event)
 static void
 EventHandlerApp(void)
 {
-  uint8_t event;
+  uint8_t event = EVENT_SYSTEM_EMPTY;
 
-  while (xQueueReceive(m_AppEventQueue, (uint8_t*)(&event), 0) == pdTRUE) {
+  while (xQueueReceive(m_AppEventQueue, &event, 0) == pdTRUE) {
     DPRINTF("Event: %d\r\n", event);
     event_manager(event);
   }

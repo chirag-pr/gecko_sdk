@@ -839,7 +839,9 @@ void Board_EnableButton(button_id_t btn)
     /* Interrupt num is equal to pin num */
     GPIO_ExtIntConfig(port, pin, intNo, true, true, true);
 #endif
-    GPIOINT_CallbackRegister(intNo, ButtonPressCallback);
+    if(intNo != 0xFF) {
+      GPIOINT_CallbackRegister(intNo, ButtonPressCallback);
+    }
   }
 }
 

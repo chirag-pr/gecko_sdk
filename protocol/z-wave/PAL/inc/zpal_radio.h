@@ -759,13 +759,6 @@ void zpal_radio_reset_after_beam_receive(bool start_receiver);
 bool zpal_radio_is_fragmented_beam_enabled(void);
 
 /**
- * @brief Returns whether use of receive beams is enabled or not for the active region.
- *
- * @return True if use of fragmented beams is enabled, false otherwise.
- */
-bool zpal_radio_is_receive_beam_enabled(void);
-
-/**
  * @brief Calibrates the radio.
  * Z-Wave expects the radio ZPAL implementation to generate a @ref ZPAL_RADIO_EVENT_RXTX_CALIBRATE event when
  * calibration is required. The event will invoke this function in non-interrupt context.

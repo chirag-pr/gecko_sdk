@@ -585,6 +585,13 @@ RAIL_Status_t sl_rail_mux_IEEE802154_Config2p4GHzRadio(RAIL_Handle_t railHandle)
   return RAIL_IEEE802154_Config2p4GHzRadio(mux_rail_handle);
 }
 
+RAIL_Status_t sl_rail_mux_IEEE802154_ConfigCcaMode(RAIL_Handle_t railHandle,
+                                                   RAIL_IEEE802154_CcaMode_t ccaMode)
+{
+  (void)railHandle;
+  return RAIL_IEEE802154_ConfigCcaMode(mux_rail_handle, ccaMode);
+}
+
 RAIL_Status_t sl_rail_mux_IEEE802154_Config2p4GHzRadio1MbpsFec(RAIL_Handle_t railHandle)
 {
   (void)railHandle;
@@ -1699,6 +1706,45 @@ HIDDEN void fn_mux_rail_events_callback(RAIL_Handle_t railHandle, RAIL_Events_t 
       continue;
     }
 
+    // This code executes when we switch out of 15.4 in a DMP scenario
+    // This is the correct place to handle errors that would result in incomplete transmits and receives
+    // that would otherwise get the statemachine stuck; Note that some of these operations were previously
+    // being done upon receiving a configunscheduled event. While this might work, it is a bit overzealous
+    if ( events & RAIL_EVENT_SCHEDULER_STATUS ) {
+      switch (RAIL_GetSchedulerStatus(railHandle)) {
+        case RAIL_SCHEDULER_STATUS_SCHEDULE_FAIL:
+        case RAIL_SCHEDULER_STATUS_CCA_CSMA_TX_FAIL:
+        case RAIL_SCHEDULER_STATUS_CCA_LBT_TX_FAIL:
+        case RAIL_SCHEDULER_STATUS_SINGLE_TX_FAIL:
+        case RAIL_SCHEDULER_STATUS_SCHEDULED_TX_FAIL:
+        case RAIL_SCHEDULER_STATUS_UNSUPPORTED:
+        case RAIL_SCHEDULER_STATUS_SCHEDULED_RX_FAIL:
+        case RAIL_SCHEDULER_STATUS_INTERNAL_ERROR:
+        case RAIL_SCHEDULER_STATUS_TASK_FAIL:
+          // If we were waiting for an ACK: we will never get the ACK we were waiting for
+          // Clear flags to match lower mac statemachine and allow things to go back to idle
+          // and retry upon resuming 15.4
+          if (fn_get_context_flag_by_index(i, RAIL_MUX_PROTOCOL_FLAGS_WAIT_FOR_ACK)) {
+            fn_set_context_flag_by_index(i, RAIL_MUX_PROTOCOL_FLAGS_WAIT_FOR_ACK, false);
+          }
+
+          // If transmit was in progress, clear flags to match lower mac statemachine
+          // and allow things to go back to idle; retries if any, will happen when things
+          // resume
+          if ( fn_get_context_flag_by_index(i, RAIL_MUX_PROTOCOL_FLAGS_TX_IN_PROGRESS)) {
+            fn_set_context_flag_by_index(i, RAIL_MUX_PROTOCOL_FLAGS_TX_IN_PROGRESS, false);
+          }
+
+          // If tx was scheduled, DMP interruption will no longer allow it. clear flags
+          if (fn_get_context_flag_by_index(i, RAIL_MUX_PROTOCOL_FLAGS_TX_SCHEDULED)) {
+            fn_set_context_flag_by_index(i, RAIL_MUX_PROTOCOL_FLAGS_TX_SCHEDULED, false);
+          }
+          break;
+
+        default:
+          break;
+      }
+    }
     if (enabled_events & RAIL_EVENTS_TX_COMPLETION) {
       if (i != active_tx_protocol_index) {
         enabled_events &= ~RAIL_EVENTS_TX_COMPLETION;
@@ -1795,15 +1841,6 @@ HIDDEN void fn_mux_rail_events_callback(RAIL_Handle_t railHandle, RAIL_Events_t 
       }
     }
 
-    if (enabled_events & RAIL_EVENT_CONFIG_UNSCHEDULED) {
-      if (fn_get_context_flag_by_index(i, RAIL_MUX_PROTOCOL_FLAGS_WAIT_FOR_ACK)) {
-        fn_set_context_flag_by_index(i, RAIL_MUX_PROTOCOL_FLAGS_WAIT_FOR_ACK, false);
-      }
-      if ( fn_get_context_flag_by_index(i, RAIL_MUX_PROTOCOL_FLAGS_TX_IN_PROGRESS)) {
-        fn_set_context_flag_by_index(i, RAIL_MUX_PROTOCOL_FLAGS_TX_IN_PROGRESS, false);
-      }
-    }
-
     if (enabled_events & RAIL_EVENT_IEEE802154_DATA_REQUEST_COMMAND) { // ToDo: do we also need to check the packet type?
       if (rx_channel != protocol_context[i].channel
           || (data_req_Info.filterMask & protocol_context[i].addr_filter_mask_802154) == 0) {
@@ -1846,6 +1883,12 @@ static RAIL_Status_t fn_start_pending_tx(void)
         fn_mux_rail_events_callback(mux_rail_handle, RAIL_EVENT_TX_BLOCKED);
         continue;
       }
+
+      if (fn_get_context_flag_by_index(i, RAIL_MUX_PROTOCOL_FLAGS_CONFIG_REPEATED_TX)) {
+        RAIL_SetNextTxRepeat(mux_rail_handle, &protocol_context[i].tx_repeat_config);
+        fn_set_context_flag_by_index(i, RAIL_MUX_PROTOCOL_FLAGS_CONFIG_REPEATED_TX, false);
+      }
+
       //TODO: we might need to check if there is already scheduled TX, and it is by somebody with higher priority?
       // a new scheduled TX can overwrite the existing one with no priority considerataions
       if (fn_get_context_flag_by_index(i, RAIL_MUX_PROTOCOL_FLAGS_SETUP_TX_FIFO)) {
@@ -2119,4 +2162,113 @@ uint16_t sl_rail_mux_GetTxPacketsRemaining(RAIL_Handle_t railHandle)
 void sl_rail_mux_ResetFifo(RAIL_Handle_t railHandle, bool txFifo, bool rxFifo)
 {
   RAIL_ResetFifo(mux_rail_handle, txFifo, rxFifo);
+}
+RAIL_Status_t sl_rail_mux_GetRxTimeFrameEnd(RAIL_Handle_t railHandle,
+                                            uint16_t totalPacketBytes,
+                                            RAIL_Time_t *pPacketTime)
+{
+  return RAIL_GetRxTimeFrameEnd(mux_rail_handle,
+                                totalPacketBytes,
+                                pPacketTime);
+}
+
+RAIL_Status_t sl_rail_mux_ConfigRxDutyCycle(RAIL_Handle_t railHandle,
+                                            const RAIL_RxDutyCycleConfig_t *config)
+{
+  (void)railHandle;
+  return RAIL_ConfigRxDutyCycle(mux_rail_handle, config);
+}
+
+RAIL_Status_t sl_rail_mux_EnableRxDutyCycle(RAIL_Handle_t railHandle,
+                                            bool enable)
+{
+  (void)railHandle;
+  return RAIL_EnableRxDutyCycle(mux_rail_handle, enable);
+}
+
+uint16_t sl_rail_mux_GetTxFifoSpaceAvailable(RAIL_Handle_t railHandle)
+{
+  (void)railHandle;
+  return RAIL_GetTxFifoSpaceAvailable(mux_rail_handle);
+}
+
+RAIL_Status_t sl_rail_mux_IEEE802154_AcceptFrames(RAIL_Handle_t railHandle,
+                                                  uint8_t framesMask)
+{
+  (void)railHandle;
+  return RAIL_IEEE802154_AcceptFrames(mux_rail_handle, framesMask);
+}
+
+RAIL_Status_t sl_rail_mux_IEEE802154_Config2p4GHzRadioAntDivCoex(RAIL_Handle_t railHandle)
+{
+  (void)railHandle;
+  return RAIL_IEEE802154_Config2p4GHzRadioAntDivCoex(mux_rail_handle);
+}
+
+RAIL_Status_t sl_rail_mux_IEEE802154_Config2p4GHzRadioAntDivCoexFem(RAIL_Handle_t railHandle)
+{
+  (void)railHandle;
+  return RAIL_IEEE802154_Config2p4GHzRadioAntDivCoexFem(mux_rail_handle);
+}
+
+RAIL_Status_t sl_rail_mux_IEEE802154_Config2p4GHzRadioAntDivFem(RAIL_Handle_t railHandle)
+{
+  (void)railHandle;
+  return RAIL_IEEE802154_Config2p4GHzRadioAntDivFem(mux_rail_handle);
+}
+
+RAIL_Status_t sl_rail_mux_IEEE802154_Config2p4GHzRadioCoex(RAIL_Handle_t railHandle)
+{
+  (void)railHandle;
+  return RAIL_IEEE802154_Config2p4GHzRadioCoex(mux_rail_handle);
+}
+
+RAIL_Status_t sl_rail_mux_IEEE802154_Config2p4GHzRadioCoexFem(RAIL_Handle_t railHandle)
+{
+  (void)railHandle;
+  return RAIL_IEEE802154_Config2p4GHzRadioCoexFem(mux_rail_handle);
+}
+
+RAIL_Status_t sl_rail_mux_IEEE802154_Config2p4GHzRadioFem(RAIL_Handle_t railHandle)
+{
+  (void)railHandle;
+  return RAIL_IEEE802154_Config2p4GHzRadioFem(mux_rail_handle);
+}
+
+RAIL_Status_t sl_rail_mux_IEEE802154_ConfigEOptions(RAIL_Handle_t railHandle,
+                                                    RAIL_IEEE802154_EOptions_t mask,
+                                                    RAIL_IEEE802154_EOptions_t options)
+{
+  (void)railHandle;
+  return RAIL_IEEE802154_ConfigEOptions(mux_rail_handle, mask, options);
+}
+
+RAIL_Status_t sl_rail_mux_IEEE802154_ConfigGOptions(RAIL_Handle_t railHandle,
+                                                    RAIL_IEEE802154_GOptions_t mask,
+                                                    RAIL_IEEE802154_GOptions_t options)
+{
+  (void)railHandle;
+  return RAIL_IEEE802154_ConfigGOptions(mux_rail_handle, mask, options);
+}
+
+RAIL_Status_t sl_rail_mux_IEEE802154_SetPtiRadioConfig(RAIL_Handle_t railHandle,
+                                                       RAIL_IEEE802154_PtiRadioConfig_t ptiRadioConfigId)
+{
+  (void)railHandle;
+  return RAIL_IEEE802154_SetPtiRadioConfig(mux_rail_handle, ptiRadioConfigId);
+}
+
+RAIL_Status_t sl_rail_mux_SetRssiOffset(RAIL_Handle_t railHandle, int8_t rssiOffset)
+{
+  (void)railHandle;
+  return RAIL_SetRssiOffset(mux_rail_handle, rssiOffset);
+}
+
+RAIL_Status_t sl_rail_mux_StartTxStreamAlt(RAIL_Handle_t railHandle,
+                                           uint16_t channel,
+                                           RAIL_StreamMode_t mode,
+                                           RAIL_TxOptions_t options)
+{
+  (void)railHandle;
+  return RAIL_StartTxStreamAlt(mux_rail_handle, channel, mode, options);
 }

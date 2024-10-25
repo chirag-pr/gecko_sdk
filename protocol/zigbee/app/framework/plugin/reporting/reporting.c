@@ -22,7 +22,13 @@
 #include "reporting.h"
 
 #ifdef ATTRIBUTE_LARGEST
-#define READ_DATA_SIZE ATTRIBUTE_LARGEST
+// The ZCL Long String type data type takes first 2 bytes as the length
+// And the sl_zigbee_af_read_attribute takes an uint8_t as the output length.
+// So, it is important to ensure the largest value is less than the 253.
+#define READ_DATA_SIZE       \
+  ((ATTRIBUTE_LARGEST) > 253 \
+   ? 253                     \
+   : (ATTRIBUTE_LARGEST))
 #else
 #define READ_DATA_SIZE 8 // max size if attributes aren't present
 #endif
@@ -423,7 +429,6 @@ bool emberAfConfigureReportingCommandCallback(const EmberAfClusterCommand *cmd)
         EmberAfAttributeType dataType;
         uint16_t minInterval, maxInterval;
         uint32_t reportableChange = 0;
-        EmberAfPluginReportingEntry newEntry;
 
         dataType = (EmberAfAttributeType)emberAfGetInt8u(cmd->buffer,
                                                          bufIndex,
@@ -474,6 +479,8 @@ bool emberAfConfigureReportingCommandCallback(const EmberAfClusterCommand *cmd)
         } else {
           // Add a reporting entry for a reported attribute.  The reports will
           // be sent from us to the source of the Configure Reporting command.
+          EmberAfPluginReportingEntry newEntry = { 0 };
+          newEntry.direction = EMBER_ZCL_REPORTING_DIRECTION_REPORTED;
           newEntry.endpoint = cmd->apsFrame->destinationEndpoint;
           newEntry.clusterId = cmd->apsFrame->clusterId;
           newEntry.attributeId = attributeId;

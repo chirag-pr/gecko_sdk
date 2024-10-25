@@ -29,7 +29,6 @@
 /**
  * @file
  *   This file implements the OpenThread platform abstraction for non-volatile storage of settings.
- *
  */
 
 #include "openthread-posix-config.h"
@@ -88,7 +87,7 @@ static void getSettingsFileName(otInstance *aInstance, char aFileName[kMaxFileNa
     uint64_t    nodeId;
 
     otPlatRadioGetIeeeEui64(aInstance, reinterpret_cast<uint8_t *>(&nodeId));
-    nodeId = ot::Encoding::BigEndian::HostSwap64(nodeId);
+    nodeId = ot::BigEndian::HostSwap64(nodeId);
     snprintf(aFileName, kMaxFileNameSize, OPENTHREAD_CONFIG_POSIX_SETTINGS_PATH "/%s_%" PRIx64 ".%s",
              offset == nullptr ? "0" : offset, nodeId, (aSwap ? "swap" : "data"));
 }
@@ -111,7 +110,6 @@ static int swapOpen(otInstance *aInstance)
  *
  * @param[in]   aFd     The file descriptor of the current swap file.
  * @param[in]   aLength Number of bytes to copy.
- *
  */
 static void swapWrite(otInstance *aInstance, int aFd, uint16_t aLength)
 {
@@ -232,6 +230,7 @@ void otPlatSettingsDeinit(otInstance *aInstance)
 
     VerifyOrExit(sSettingsFd != -1);
     VerifyOrDie(close(sSettingsFd) == 0, OT_EXIT_ERROR_ERRNO);
+    sSettingsFd = -1;
 
 exit:
     return;

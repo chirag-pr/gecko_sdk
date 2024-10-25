@@ -349,7 +349,7 @@ bool sli_zigbee_af_process_global_command(EmberAfClusterCommand *cmd)
       uint8_t dataType;
       uint16_t dataSize;
 #if (BIGENDIAN_CPU)
-      uint8_t writeData[ATTRIBUTE_LARGEST];
+      uint8_t writeData[ATTRIBUTE_MAX_DATA_SIZE];
 #endif //(BIGENDIAN_CPU)
       EmberAfStatus status;
 
@@ -372,7 +372,7 @@ bool sli_zigbee_af_process_global_command(EmberAfClusterCommand *cmd)
         // endian for the EZSP hosts. This means for the EM250 the data
         // needs to be reversed before sending to writeAttributes
 #if (BIGENDIAN_CPU)
-        if (dataSize != 0 && dataSize <= ATTRIBUTE_LARGEST) {
+        if (dataSize != 0 && dataSize <= ATTRIBUTE_MAX_DATA_SIZE) {
           // strings go over the air as length byte and then in human
           // readable format. These should not be flipped.
           if (emberAfIsThisDataTypeAStringType(dataType)) {

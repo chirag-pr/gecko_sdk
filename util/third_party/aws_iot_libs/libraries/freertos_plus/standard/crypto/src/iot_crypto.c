@@ -86,10 +86,27 @@ typedef struct SignatureVerificationState
     }
 #endif /* ifdef CONFIG_MBEDTLS_USE_FREERTOS_PVCALLOC */
 
+#if (configUSE_RECURSIVE_MUTEXES != 1)
+    #error "aws_mbedtls_mutex_init requires support for recursive mutexes enabled."
+#endif
+
 /*-----------------------------------------------------------*/
 /*--------- mbedTLS threading functions for FreeRTOS --------*/
 /*--------------- See MBEDTLS_THREADING_ALT -----------------*/
 /*-----------------------------------------------------------*/
+
+/**
+ * @brief Configure mutex as recursive. This implementation only supports recursive mutexes.
+ *
+ */
+void aws_mbedtls_mutex_set_recursive( mbedtls_threading_mutex_t * mutex )
+{
+  /* Do nothing.
+     This implementation of mbedtls_threading_alt only supports recursive mutexes.
+     See aws_mbedtls_mutex_init always initialise mutex by calling
+     xSemaphoreCreateRecursiveMutex. */
+  (void) mutex;
+}
 
 /**
  * @brief Implementation of mbedtls_mutex_init for thread-safety.
@@ -97,7 +114,7 @@ typedef struct SignatureVerificationState
  */
 void aws_mbedtls_mutex_init( mbedtls_threading_mutex_t * mutex )
 {
-    mutex->mutex = xSemaphoreCreateMutex();
+    mutex->mutex = xSemaphoreCreateRecursiveMutex();
 
     if( mutex->mutex != NULL )
     {
@@ -135,7 +152,7 @@ int aws_mbedtls_mutex_lock( mbedtls_threading_mutex_t * mutex )
 
     if( mutex->is_valid == 1 )
     {
-        if( xSemaphoreTake( mutex->mutex, portMAX_DELAY ) )
+        if( xSemaphoreTakeRecursive( mutex->mutex, portMAX_DELAY ) )
         {
             ret = 0;
         }
@@ -161,7 +178,7 @@ int aws_mbedtls_mutex_unlock( mbedtls_threading_mutex_t * mutex )
 
     if( mutex->is_valid == 1 )
     {
-        if( xSemaphoreGive( mutex->mutex ) )
+        if( xSemaphoreGiveRecursive( mutex->mutex ) )
         {
             ret = 0;
         }

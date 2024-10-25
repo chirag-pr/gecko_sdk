@@ -26,8 +26,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef POSIX_PLATFORM_CONFIGURATION_HPP_
-#define POSIX_PLATFORM_CONFIGURATION_HPP_
+#ifndef OT_POSIX_PLATFORM_CONFIGURATION_HPP_
+#define OT_POSIX_PLATFORM_CONFIGURATION_HPP_
 
 #include "openthread-posix-config.h"
 
@@ -41,7 +41,9 @@
 #include <openthread/platform/radio.h>
 
 #include "config_file.hpp"
+#include "logger.hpp"
 #include "power.hpp"
+
 #include "common/code_utils.hpp"
 
 namespace ot {
@@ -49,14 +51,15 @@ namespace Posix {
 
 /**
  * Updates the target power table and calibrated power table to the RCP.
- *
  */
-class Configuration
+class Configuration : public Logger<Configuration>
 {
 public:
+    static const char kLogModuleName[]; ///< Module name used for logging.
+
     Configuration(void)
-        : mFactoryConfigFile(kFactoryConfigFile)
-        , mProductConfigFile(kProductConfigFile)
+        : mFactoryConfigFile(OPENTHREAD_POSIX_CONFIG_FACTORY_CONFIG_FILE)
+        , mProductConfigFile(OPENTHREAD_POSIX_CONFIG_PRODUCT_CONFIG_FILE)
         , mRegionCode(0)
         , mSupportedChannelMask(kDefaultChannelMask)
         , mPreferredChannelMask(kDefaultChannelMask)
@@ -73,7 +76,6 @@ public:
      *
      * @retval  OT_ERROR_NONE             Successfully set region code.
      * @retval  OT_ERROR_FAILED           Failed to set the region code.
-     *
      */
     otError SetRegion(uint16_t aRegionCode);
 
@@ -84,7 +86,6 @@ public:
      * ISO 3166 alpha-2 code.
      *
      * @returns  The region code.
-     *
      */
     uint16_t GetRegion(void) const { return mRegionCode; }
 
@@ -92,7 +93,6 @@ public:
      * Get the radio supported channel mask that the device is allowed to be on.
      *
      * @returns The radio supported channel mask.
-     *
      */
     uint32_t GetSupportedChannelMask(void) const { return mSupportedChannelMask; }
 
@@ -100,7 +100,6 @@ public:
      * Gets the radio preferred channel mask that the device prefers to form on.
      *
      * @returns The radio preferred channel mask.
-     *
      */
     uint32_t GetPreferredChannelMask(void) const { return mPreferredChannelMask; }
 
@@ -109,22 +108,21 @@ public:
      *
      * @retval TRUE  If there are any valid configuration keys in the configuration file.
      * @retval FALSE If the configuration file doesn't exist or there is no key in the configuration file.
-     *
      */
     bool IsValid(void) const;
 
 private:
-    const char               *kFactoryConfigFile       = OPENTHREAD_POSIX_CONFIG_FACTORY_CONFIG_FILE;
-    const char               *kProductConfigFile       = OPENTHREAD_POSIX_CONFIG_PRODUCT_CONFIG_FILE;
-    const char               *kKeyCalibratedPower      = "calibrated_power";
-    const char               *kKeyTargetPower          = "target_power";
-    const char               *kKeyRegionDomainMapping  = "region_domain_mapping";
-    const char               *kKeySupportedChannelMask = "supported_channel_mask";
-    const char               *kKeyPreferredChannelMask = "preferred_channel_mask";
-    const char               *kCommaDelimiter          = ",";
-    static constexpr uint16_t kMaxValueSize            = 512;
-    static constexpr uint16_t kRegionCodeWorldWide     = 0x5757;    // Region Code: "WW"
-    static constexpr uint32_t kDefaultChannelMask      = 0x7fff800; // Channel 11 ~ 26
+#if OPENTHREAD_CONFIG_PLATFORM_POWER_CALIBRATION_ENABLE
+    static const char kKeyCalibratedPower[];
+#endif
+    static const char         kKeyTargetPower[];
+    static const char         kKeyRegionDomainMapping[];
+    static const char         kKeySupportedChannelMask[];
+    static const char         kKeyPreferredChannelMask[];
+    static const char         kCommaDelimiter[];
+    static constexpr uint16_t kMaxValueSize        = 512;
+    static constexpr uint16_t kRegionCodeWorldWide = 0x5757;    // Region Code: "WW"
+    static constexpr uint32_t kDefaultChannelMask  = 0x7fff800; // Channel 11 ~ 26
 
     uint16_t StringToRegionCode(const char *aString) const
     {
@@ -150,4 +148,4 @@ private:
 } // namespace ot
 
 #endif // OPENTHREAD_POSIX_CONFIG_CONFIGURATION_FILE_ENABLE
-#endif // POSIX_PLATFORM_CONFIGURATION_HPP_
+#endif // OT_POSIX_PLATFORM_CONFIGURATION_HPP_

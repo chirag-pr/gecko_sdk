@@ -75,8 +75,8 @@ uint8_t GetControllerCapabilities(void)
   };
   EQueueNotifyingStatus QueueStatus = QueueNotifyingSendToBack(m_pAppHandles->pZwCommandQueue, (uint8_t *)&cmdPackage, 500);
   ASSERT(EQUEUENOTIFYING_STATUS_SUCCESS == QueueStatus);
-  SZwaveCommandStatusPackage cmdStatus = { 0 };
-  if (GetCommandResponse(&cmdStatus, EZWAVECOMMANDSTATUS_GET_CONTROLLER_CAPABILITIES))
+  SZwaveCommandStatusPackage cmdStatus = { .eStatusType = EZWAVECOMMANDSTATUS_GET_CONTROLLER_CAPABILITIES };
+  if (GetCommandResponse(&cmdStatus, cmdStatus.eStatusType))
   {
     return cmdStatus.Content.GetControllerCapabilitiesStatus.result;
   }
@@ -113,8 +113,8 @@ void GetNodeInfo(uint16_t NodeId, t_ExtNodeInfo* pNodeInfo)
   EQueueNotifyingStatus QueueStatus = QueueNotifyingSendToBack(m_pAppHandles->pZwCommandQueue, (uint8_t *)&GetNodeInfoCommand, 0);
   ASSERT(EQUEUENOTIFYING_STATUS_SUCCESS == QueueStatus);
   // Wait for protocol to handle command (it shouldnt take long)
-  SZwaveCommandStatusPackage NodeInfo = { 0 };
-  if (GetCommandResponse(&NodeInfo, EZWAVECOMMANDSTATUS_NODE_INFO))
+  SZwaveCommandStatusPackage NodeInfo = { .eStatusType = EZWAVECOMMANDSTATUS_NODE_INFO};
+  if (GetCommandResponse(&NodeInfo, NodeInfo.eStatusType))
   {
     if (NodeInfo.Content.NodeInfoStatus.NodeId == NodeId)
     {
@@ -144,8 +144,8 @@ void Get_included_nodes(uint8_t* node_id_list)
   EQueueNotifyingStatus QueueStatus = QueueNotifyingSendToBack(m_pAppHandles->pZwCommandQueue, (uint8_t *)&GetIncludedNodesCommand, 0);
   ASSERT(EQUEUENOTIFYING_STATUS_SUCCESS == QueueStatus);
   // Wait for protocol to handle command (it shouldnt take long)
-  SZwaveCommandStatusPackage includedNodes = { 0 };
-  if (GetCommandResponse(&includedNodes, EZWAVECOMMANDSTATUS_ZW_GET_INCLUDED_NODES))
+  SZwaveCommandStatusPackage includedNodes = { .eStatusType = EZWAVECOMMANDSTATUS_ZW_GET_INCLUDED_NODES };
+  if (GetCommandResponse(&includedNodes, includedNodes.eStatusType))
   {
     memcpy(node_id_list, (uint8_t*)includedNodes.Content.GetIncludedNodes.node_id_list, sizeof(NODE_MASK_TYPE));
     return;
@@ -266,8 +266,8 @@ uint8_t GetPTIConfig(void)
   };
   EQueueNotifyingStatus QueueStatus = QueueNotifyingSendToBack(m_pAppHandles->pZwCommandQueue, (uint8_t *)&cmdPackage, 500);
   ASSERT(EQUEUENOTIFYING_STATUS_SUCCESS == QueueStatus);
-  SZwaveCommandStatusPackage cmdStatus;
-  if (GetCommandResponse(&cmdStatus, EZWAVECOMMANDSTATUS_ZW_GET_PTI_CONFIG))
+  SZwaveCommandStatusPackage cmdStatus = { .eStatusType = EZWAVECOMMANDSTATUS_ZW_GET_PTI_CONFIG };
+  if (GetCommandResponse(&cmdStatus, cmdStatus.eStatusType))
   {
     return cmdStatus.Content.GetPTIconfig.result;
   }

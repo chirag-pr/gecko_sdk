@@ -253,9 +253,9 @@
  */
 #ifndef OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AHEAD
 #if RADIO_CONFIG_SUBGHZ_SUPPORT
-  #define OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AHEAD 256
+#define OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AHEAD 256
 #else
-  #define OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AHEAD 192
+#define OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AHEAD 192
 #endif
 #endif
 
@@ -481,25 +481,25 @@
  */
 #ifndef SL_OPENTHREAD_CSL_TX_UNCERTAINTY
 #if OPENTHREAD_RADIO || OPENTHREAD_CONFIG_REFERENCE_DEVICE_ENABLE
-  # define SL_OPENTHREAD_CSL_TX_UNCERTAINTY 175
+#define SL_OPENTHREAD_CSL_TX_UNCERTAINTY 175
 #elif OPENTHREAD_FTD
-  // Approx. ~128 us. for single CCA + some additional tx uncertainty in testing
-  #define SL_OPENTHREAD_CSL_TX_UNCERTAINTY 20
+// Approx. ~128 us. for single CCA + some additional tx uncertainty in testing
+#define SL_OPENTHREAD_CSL_TX_UNCERTAINTY 20
 #else
-  // Approx. ~128 us. for single CCA
-  //
-  // Note: Our SSEDs "schedule" transmissions to their parent in order to know
-  // exactly when in the future the data packets go out so they can calculate
-  // the accurate CSL phase to send to their parent.
-  //
-  // The receive windows on the SSEDs scale with this value, so increasing this
-  // uncertainty to account for full CCA/CSMA with 0..7 backoffs
-  // (see RAIL_CSMA_CONFIG_802_15_4_2003_2p4_GHz_OQPSK_CSMA) will mean that the
-  // receive windows can get very long (~ 5ms.)
-  //
-  // We have updated SSEDs to use a single CCA (RAIL_CSMA_CONFIG_SINGLE_CCA)
-  // instead. If they are in very busy channels, CSL won't be reliable anyway.
-  #define SL_OPENTHREAD_CSL_TX_UNCERTAINTY 12
+// Approx. ~128 us. for single CCA
+//
+// Note: Our SSEDs "schedule" transmissions to their parent in order to know
+// exactly when in the future the data packets go out so they can calculate
+// the accurate CSL phase to send to their parent.
+//
+// The receive windows on the SSEDs scale with this value, so increasing this
+// uncertainty to account for full CCA/CSMA with 0..7 backoffs
+// (see RAIL_CSMA_CONFIG_802_15_4_2003_2p4_GHz_OQPSK_CSMA) will mean that the
+// receive windows can get very long (~ 5ms.)
+//
+// We have updated SSEDs to use a single CCA (RAIL_CSMA_CONFIG_SINGLE_CCA)
+// instead. If they are in very busy channels, CSL won't be reliable anyway.
+#define SL_OPENTHREAD_CSL_TX_UNCERTAINTY 12
 #endif
 #endif
 
@@ -512,7 +512,7 @@
  *
  */
 #ifndef SL_OPENTHREAD_HFXO_ACCURACY
-  #define SL_OPENTHREAD_HFXO_ACCURACY SL_DEVICE_INIT_HFXO_PRECISION
+#define SL_OPENTHREAD_HFXO_ACCURACY SL_DEVICE_INIT_HFXO_PRECISION
 #endif
 
 /**
@@ -523,11 +523,11 @@
  * @note Platforms may optimize this value based on operational conditions (i.e.: temperature).
  */
 #ifndef SL_OPENTHREAD_LFXO_ACCURACY
-  #if defined(HARDWARE_BOARD_HAS_LFXO)
-    #define SL_OPENTHREAD_LFXO_ACCURACY SL_DEVICE_INIT_LFXO_PRECISION
-  #else
-    #define SL_OPENTHREAD_LFXO_ACCURACY 0
-  #endif
+#if defined(HARDWARE_BOARD_HAS_LFXO)
+#define SL_OPENTHREAD_LFXO_ACCURACY SL_DEVICE_INIT_LFXO_PRECISION
+#else
+#define SL_OPENTHREAD_LFXO_ACCURACY 0
+#endif
 #endif
 
 /**

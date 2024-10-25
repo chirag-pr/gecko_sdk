@@ -29,10 +29,10 @@
 #include "stack/gp/gp-sink-table.h"
 #endif //!EZSP_HOST
 
-bool sli_zigbee_af_green_power_server_gp_sink_commissioning_mode_command_handler(uint8_t options,
-                                                                                 uint16_t gpmAddrForSecurity,
-                                                                                 uint16_t gpmAddrForPairing,
-                                                                                 uint8_t sinkEndpoint);
+EmberAfStatus sli_zigbee_af_green_power_server_gp_sink_commissioning_mode_command_handler(uint8_t options,
+                                                                                          uint16_t gpmAddrForSecurity,
+                                                                                          uint16_t gpmAddrForPairing,
+                                                                                          uint8_t sinkEndpoint);
 
 // Sink Commissioning Mode Enter
 void emberAfPluginGreenPowerServerCommissioningMode(SL_CLI_COMMAND_ARG)

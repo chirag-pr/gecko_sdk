@@ -1726,10 +1726,8 @@ WEAK(void emberAfRtosStackWakeupIsrCallback(void))
 // Rtos Stack Wakeup Isr Handler
 void emberRtosStackWakeupIsrHandler(void)
 {
-  emberAfPushCallbackNetworkIndex();
   sli_zb_af_rtos_stack_wakeup_isr();
   emberAfRtosStackWakeupIsrCallback();
-  emberAfPopNetworkIndex();
 }
 
 // -----------------------------------------------------------------------------

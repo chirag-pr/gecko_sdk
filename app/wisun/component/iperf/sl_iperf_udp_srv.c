@@ -273,9 +273,9 @@ void sl_iperf_test_udp_server(sl_iperf_test_t * test)
 
 static void _iperf_udp_finack(sl_iperf_test_t * const test)
 {
-  sl_iperf_udp_srv_hdr_t *hdr  = NULL;
-  sl_iperf_time_t time        = { 0U };
-  int32_t r                   = SL_IPERF_NW_API_ERROR;
+  static sl_iperf_udp_srv_hdr_t hdr = { 0 };
+  sl_iperf_time_t time              = { 0U };
+  int32_t r                         = SL_IPERF_NW_API_ERROR;
 
   // assert minimum buff size for fin ack
   assert(test->conn.buff_size >= SL_IPERF_UDP_SERVER_FIN_ACK_SIZE);
@@ -285,28 +285,28 @@ static void _iperf_udp_finack(sl_iperf_test_t * const test)
     return;
   }
 
-  hdr = (sl_iperf_udp_srv_hdr_t *) test->conn.buff;
-
   // reset datagram
-  memset(&hdr->dtg, 0, sizeof(sl_iperf_udp_datagram_t));
-  hdr->flags            = sl_iperf_network_htonl(SL_IPERF_HEADER_VERSION1);
-  hdr->tot_len_u        = 0U;
-  hdr->tot_len_l        = sl_iperf_network_htonl(test->statistic.bytes);
+  memset(&hdr.dtg, 0, sizeof(sl_iperf_udp_datagram_t));
+  hdr.flags           = sl_iperf_network_htonl(SL_IPERF_HEADER_VERSION1);
+  hdr.tot_len_u        = 0U;
+  hdr.tot_len_l        = sl_iperf_network_htonl(test->statistic.bytes);
   sl_iperf_calc_time_from_ms(&time, sl_iperf_test_calc_time_duration_ms(test));
-  hdr->stop_sec         = sl_iperf_network_htonl(time.sec);
-  hdr->stop_usec        = sl_iperf_network_htonl(time.usec);
-  hdr->lost_pkt_cnt     = sl_iperf_network_htonl(test->statistic.udp_lost_pkt);
-  hdr->out_of_order_cnt = sl_iperf_network_htonl(test->statistic.udp_out_of_order);
-  hdr->packet_cnt       = sl_iperf_network_htonl(test->statistic.nbr_rcv_snt_packets + test->statistic.udp_lost_pkt);
+  hdr.stop_sec         = sl_iperf_network_htonl(time.sec);
+  hdr.stop_usec        = sl_iperf_network_htonl(time.usec);
+  hdr.lost_pkt_cnt     = sl_iperf_network_htonl(test->statistic.udp_lost_pkt);
+  hdr.out_of_order_cnt = sl_iperf_network_htonl(test->statistic.udp_out_of_order);
+  hdr.packet_cnt       = sl_iperf_network_htonl(test->statistic.nbr_rcv_snt_packets + test->statistic.udp_lost_pkt);
   sl_iperf_calc_time_from_ms(&time, (sl_iperf_ts_ms_t)(test->statistic.udp_jitter));
-  hdr->jitter_sec       = sl_iperf_network_htonl(time.sec);  // sec
-  hdr->jitter_usec      = sl_iperf_network_htonl(time.usec); // usec
+  hdr.jitter_sec       = sl_iperf_network_htonl(time.sec);  // sec
+  hdr.jitter_usec      = sl_iperf_network_htonl(time.usec); // usec
 
 #if SL_IPERF_VERBOSE_MODE
-  sl_iperf_print_test_srv_header_json(test, hdr);
+  sl_iperf_print_test_srv_header_json(test, &hdr);
 #endif
 
   for (uint32_t i = 0; i < SL_IPERF_SERVER_UDP_TX_FINACK_COUNT; ++i) {
+    memcpy(test->conn.buff, &hdr, sizeof(sl_iperf_udp_srv_hdr_t));
+
     if (sl_iperf_socket_sendto(test->conn.socket_id,
                                test->conn.buff,
                                SL_IPERF_UDP_SERVER_FIN_ACK_SIZE,

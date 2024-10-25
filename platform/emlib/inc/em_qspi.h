@@ -204,7 +204,7 @@ void QSPI_Init(QSPI_TypeDef * qspi, const QSPI_Init_TypeDef * init);
 void QSPI_ReadConfig(QSPI_TypeDef * qspi, const QSPI_ReadConfig_TypeDef * config);
 void QSPI_WriteConfig(QSPI_TypeDef * qspi, const QSPI_WriteConfig_TypeDef * config);
 void QSPI_ExecStigCmd(QSPI_TypeDef * qspi, const QSPI_StigCmd_TypeDef * stigCmd);
-
+void QSPI_Reset(QSPI_TypeDef * qspi);
 /***************************************************************************//**
  * @brief
  *   Wait for the QSPI to go into idle state.

@@ -355,8 +355,9 @@ bool emberAfReportAttributesCallback(EmberAfClusterId clusterId,
                                          bufLen - bufIndex);
 
 #if (BIGENDIAN_CPU)
-    if (dataSize != 0 && dataSize <= ATTRIBUTE_LARGEST) {
-      uint8_t data[ATTRIBUTE_LARGEST];
+    if (dataSize != 0
+        && dataSize <= ATTRIBUTE_MAX_DATA_SIZE) {
+      uint8_t data[ATTRIBUTE_MAX_DATA_SIZE];
       if (isThisDataTypeSentLittleEndianOTA(dataType)) {
         emberReverseMemCopy(data, buffer + bufIndex, dataSize);
       } else {

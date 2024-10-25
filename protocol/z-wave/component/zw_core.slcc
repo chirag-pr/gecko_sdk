@@ -203,21 +203,5 @@ config_file:
     file_id: region_config
   - path: protocol/z-wave/config/zw_build_no.h
     file_id: build_no
-  # Default to 20dbm
-  - path: protocol/z-wave/platform/SiliconLabs/PAL/config/zw_rf/20dbm/zw_config_rf.h
-    file_id: config_rf
-  # Override with 14 dbm unless 20dbm opn
   - path: protocol/z-wave/platform/SiliconLabs/PAL/config/zw_rf/zw_config_rf.h
-    override:
-      component: zw_core
-      file_id: config_rf
-    unless:
-    # Series 1 opns that are 20dbm
-    - efr32zg14p731f256gm32
-    - efr32zg13p531f512gm48
-    # Series 2 opns that are 20dbm
-    - efr32zg23a020f512gm40
-    - efr32zg23a020f512gm48
-    - efr32zg23b020f512im40
-    - efr32zg23b020f512im48
-    - efr32zg23b021f512im40
+    file_id: config_rf

@@ -56,13 +56,11 @@ static bool NvmBackupOpen(void)
   uint8_t bReturn = QueueProtocolCommand((uint8_t*)&nvmOpen);
   if (EQUEUENOTIFYING_STATUS_SUCCESS == bReturn)
   {
-    SZwaveCommandStatusPackage cmdStatus = { 0 };
-    if (GetCommandResponse(&cmdStatus, EZWAVECOMMANDSTATUS_NVM_BACKUP_RESTORE))
+    SZwaveCommandStatusPackage cmdStatus = { .eStatusType = EZWAVECOMMANDSTATUS_NVM_BACKUP_RESTORE};
+    if ((GetCommandResponse(&cmdStatus, cmdStatus.eStatusType))
+        && (cmdStatus.Content.NvmBackupRestoreStatus.status))
     {
-      if (cmdStatus.Content.NvmBackupRestoreStatus.status)
-      {
-        return true;
-      }
+      return true;
     }
   }
   return false;
@@ -155,7 +153,7 @@ static uint8_t NvmBackupRestore( uint32_t offset, uint8_t length, uint8_t* pNvmD
 
 void func_id_serial_api_nvm_backup_restore(__attribute__((unused)) uint8_t inputLength, uint8_t *pInputBuffer, uint8_t *pOutputBuffer, uint8_t *pOutputLength)
 {
-  uint32_t NVM_WorkPtr;
+  uint32_t NVM_WorkPtr = 0;
   uint8_t dataLength;
   const uint32_t nvm_storage_size = zpal_nvm_backup_get_size();
 
@@ -177,8 +175,6 @@ void func_id_serial_api_nvm_backup_restore(__attribute__((unused)) uint8_t input
         if (NvmBackupOpen())
         {
           NVMBackupRestoreOperationInProgress = NVMBackupRestoreOperationOpen;
-          NVM_WorkPtr = 0;
-
       /* Set the size of the backup/restore. (Number of bytes in flash used for file systems) */
       /* Please note that the special case where nvm_storage_size == 0x10000 is indicated by 0x00 0x00 */
           pOutputBuffer[2] = (uint8_t)(nvm_storage_size >> 8);

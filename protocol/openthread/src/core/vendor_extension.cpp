@@ -87,10 +87,6 @@ void ExtensionBase::SignalNcpInit(Ncp::NcpBase &aNcpBase)
 {
     // NCP instance is initialized and ready.
     OT_UNUSED_VARIABLE(aNcpBase);
-
-#if defined(SL_CATALOG_OT_CRASH_HANDLER_PRESENT)
-    efr32PrintResetInfo();
-#endif
 }
 
 void ExtensionBase::HandleNotifierEvents(Events aEvents)

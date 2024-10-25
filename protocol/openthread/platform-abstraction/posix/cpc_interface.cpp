@@ -33,8 +33,8 @@
 
 #include "cpc_interface.hpp"
 
-#include "vendor_interface.hpp"
 #include "platform-posix.h"
+#include "vendor_interface.hpp"
 
 #include "sl_cpc.h"
 
@@ -52,6 +52,8 @@
 #include <unistd.h>
 
 #include "common/code_utils.hpp"
+#include "common/debug.hpp"
+#include "common/encoding.hpp"
 #include "common/logging.hpp"
 #include "common/new.hpp"
 #include "lib/spinel/spinel.h"
@@ -67,8 +69,8 @@ namespace Posix {
 // `CpcInterfaceImpl` API
 // ----------------------------------------------------------------------------
 
-volatile sig_atomic_t CpcInterfaceImpl::sCpcResetReq = false;
-bool CpcInterfaceImpl::sIsCpcInitialized = false;
+volatile sig_atomic_t CpcInterfaceImpl::sCpcResetReq      = false;
+bool                  CpcInterfaceImpl::sIsCpcInitialized = false;
 
 CpcInterfaceImpl::CpcInterfaceImpl(const Url::Url &aRadioUrl)
     : mReceiveFrameCallback(nullptr)
@@ -82,9 +84,7 @@ CpcInterfaceImpl::CpcInterfaceImpl(const Url::Url &aRadioUrl)
     mCpcBusSpeed                        = kCpcBusSpeed;
 }
 
-otError CpcInterfaceImpl::Init(ReceiveFrameCallback aCallback,
-                               void *aCallbackContext,
-                               RxFrameBuffer &aFrameBuffer)
+otError CpcInterfaceImpl::Init(ReceiveFrameCallback aCallback, void *aCallbackContext, RxFrameBuffer &aFrameBuffer)
 {
     otError     error = OT_ERROR_NONE;
     const char *value;
@@ -123,8 +123,8 @@ otError CpcInterfaceImpl::Init(ReceiveFrameCallback aCallback,
     sIsCpcInitialized = true;
 
     mReceiveFrameCallback = aCallback;
-    mReceiveFrameContext = aCallbackContext;
-    mReceiveFrameBuffer = &aFrameBuffer;
+    mReceiveFrameContext  = aCallbackContext;
+    mReceiveFrameBuffer   = &aFrameBuffer;
 
 exit:
     return error;
@@ -163,8 +163,8 @@ void CpcInterfaceImpl::Read(uint64_t aTimeoutUs)
     {
         cpc_timeval_t timeout;
 
-        timeout.seconds      = static_cast<int>(aTimeoutUs / US_PER_S);
-        timeout.microseconds = static_cast<int>(aTimeoutUs % US_PER_S);
+        timeout.seconds      = static_cast<int>(aTimeoutUs / OT_US_PER_S);
+        timeout.microseconds = static_cast<int>(aTimeoutUs % OT_US_PER_S);
 
         block = true;
         ret   = cpc_set_endpoint_option(mEndpoint, CPC_OPTION_BLOCKING, &block, sizeof(block));
@@ -188,7 +188,7 @@ void CpcInterfaceImpl::Read(uint64_t aTimeoutUs)
             {
                 break;
             }
-            uint16_t bufferLen = Encoding::BigEndian::ReadUint16(ptr);
+            uint16_t bufferLen = BigEndian::ReadUint16(ptr);
             ptr += 2;
             bytesRead -= 2;
             if (bytesRead < bufferLen)
@@ -307,12 +307,12 @@ void CpcInterfaceImpl::CheckAndReInitCpc(void)
     // Check if the endpoint was previously opened
     if (mSockFd > 0)
     {
-      // Close endpoint
-      result = cpc_close_endpoint(&mEndpoint);
-      // If the close failed, exit
-      VerifyOrDie(result == 0, OT_EXIT_ERROR_ERRNO);
-      // Invalidate file descriptor
-      mSockFd = -1;
+        // Close endpoint
+        result = cpc_close_endpoint(&mEndpoint);
+        // If the close failed, exit
+        VerifyOrDie(result == 0, OT_EXIT_ERROR_ERRNO);
+        // Invalidate file descriptor
+        mSockFd = -1;
     }
 
     // Restart communication with cpcd
@@ -381,58 +381,54 @@ VendorInterface::VendorInterface(const Url::Url &aRadioUrl)
     new (&sCpcInterfaceImplRaw) CpcInterfaceImpl(aRadioUrl);
 }
 
-otError VendorInterface::Init(ReceiveFrameCallback aCallback,
-                              void                *aCallbackContext,
-                              RxFrameBuffer       &aFrameBuffer)
+otError VendorInterface::Init(ReceiveFrameCallback aCallback, void *aCallbackContext, RxFrameBuffer &aFrameBuffer)
 {
-    return reinterpret_cast<CpcInterfaceImpl*>(&sCpcInterfaceImplRaw)->Init(aCallback,
-                                                                            aCallbackContext,
-                                                                            aFrameBuffer);
+    return reinterpret_cast<CpcInterfaceImpl *>(&sCpcInterfaceImplRaw)->Init(aCallback, aCallbackContext, aFrameBuffer);
 }
 
 uint32_t VendorInterface::GetBusSpeed(void) const
 {
-    return reinterpret_cast<CpcInterfaceImpl*>(&sCpcInterfaceImplRaw)->GetBusSpeed();
+    return reinterpret_cast<CpcInterfaceImpl *>(&sCpcInterfaceImplRaw)->GetBusSpeed();
 }
 
 VendorInterface::~VendorInterface(void)
 {
-    reinterpret_cast<CpcInterfaceImpl*>(&sCpcInterfaceImplRaw)->Deinit();
+    reinterpret_cast<CpcInterfaceImpl *>(&sCpcInterfaceImplRaw)->Deinit();
 }
 
 void VendorInterface::Deinit(void)
 {
-    reinterpret_cast<CpcInterfaceImpl*>(&sCpcInterfaceImplRaw)->Deinit();
+    reinterpret_cast<CpcInterfaceImpl *>(&sCpcInterfaceImplRaw)->Deinit();
 }
 
 otError VendorInterface::SendFrame(const uint8_t *aFrame, uint16_t aLength)
 {
-    return reinterpret_cast<CpcInterfaceImpl*>(&sCpcInterfaceImplRaw)->SendFrame(aFrame, aLength);
+    return reinterpret_cast<CpcInterfaceImpl *>(&sCpcInterfaceImplRaw)->SendFrame(aFrame, aLength);
 }
 
 otError VendorInterface::WaitForFrame(uint64_t aTimeoutUs)
 {
-    return reinterpret_cast<CpcInterfaceImpl*>(&sCpcInterfaceImplRaw)->WaitForFrame(aTimeoutUs);
+    return reinterpret_cast<CpcInterfaceImpl *>(&sCpcInterfaceImplRaw)->WaitForFrame(aTimeoutUs);
 }
 
 void VendorInterface::UpdateFdSet(void *aMainloopContext)
 {
-    reinterpret_cast<CpcInterfaceImpl*>(&sCpcInterfaceImplRaw)->UpdateFdSet(aMainloopContext);
+    reinterpret_cast<CpcInterfaceImpl *>(&sCpcInterfaceImplRaw)->UpdateFdSet(aMainloopContext);
 }
 
 void VendorInterface::Process(const void *aMainloopContext)
 {
-    reinterpret_cast<CpcInterfaceImpl*>(&sCpcInterfaceImplRaw)->Process(aMainloopContext);
+    reinterpret_cast<CpcInterfaceImpl *>(&sCpcInterfaceImplRaw)->Process(aMainloopContext);
 }
 
 otError VendorInterface::HardwareReset(void)
 {
-    return reinterpret_cast<CpcInterfaceImpl*>(&sCpcInterfaceImplRaw)->HardwareReset();
+    return reinterpret_cast<CpcInterfaceImpl *>(&sCpcInterfaceImplRaw)->HardwareReset();
 }
 
 const otRcpInterfaceMetrics *VendorInterface::GetRcpInterfaceMetrics(void) const
 {
-    return reinterpret_cast<CpcInterfaceImpl*>(&sCpcInterfaceImplRaw)->GetRcpInterfaceMetrics();
+    return reinterpret_cast<CpcInterfaceImpl *>(&sCpcInterfaceImplRaw)->GetRcpInterfaceMetrics();
 }
 
 } // namespace Posix

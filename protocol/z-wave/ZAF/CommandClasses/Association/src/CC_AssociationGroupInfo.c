@@ -192,7 +192,7 @@ bool GetApplGroupCommandList(
 static bool SendAssoGroupInfoReport(void)
 {
   ZW_APPLICATION_TX_BUFFER txBuf = { 0 };
-  zaf_tx_options_t tx_options;
+  zaf_tx_options_t tx_options = { 0 };
 
   zaf_transport_rx_to_tx_options(&rxOptions, &tx_options);
 
